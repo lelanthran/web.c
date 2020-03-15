@@ -17,7 +17,9 @@ VERSION=0.0.1-rc
 # USER SETS THIS VARIABLE
 # If you want any other sources files linked to this web-server, list them
 # here, except replace the file extension ".c" with ".o".
-OBS=web-add.o
+OBS=\
+	util.o \
+	web-add.o
 
 # USER SETS THIS VARIABLE
 # If you need to add your header directories, this is where it must be done
@@ -29,6 +31,8 @@ INCLUDE_PATHS=\
 # here (don't change the extension).
 HEADERS=\
 	web.c/web-main.h \
+	web.c/util.h \
+	web.c/config.h \
 	web.c/web-add.h
 
 # ###############################################################
@@ -54,7 +58,11 @@ SO_VER=$(shell echo $(VERSION) | cut -f 1 -d .)
 # ###############################################################
 
 CC=gcc
-CFLAGS= -W -Wall -Wconversion -c -fPIC
+CFLAGS=  -c -fPIC \
+	-W -Wall \
+	-Wnull-dereference \
+	-Wjump-misses-init \
+	-Wformat=2
 LD=gcc
 LDFLAGS=
 
@@ -74,7 +82,9 @@ $(BINPROG_STATIC)-$(VERSION):	$(MAIN_OB) lib$(LIB_STATIC)-$(VERSION).a
 
 lib$(LIB_SHARED).so.$(VERSION):	$(OBS)
 	$(LD) -shared $(OBS) -Wl,-soname,lib$(LIB_SHARED).so.$(SO_VER) $(LDFLAGS) -o $@
+	rm -rf lib$(LIB_SHARED).so.$(SO_VER)
 	ln -s $@ lib$(LIB_SHARED).so.$(SO_VER)
+	rm -rf lib$(LIB_SHARED).so
 	ln -s $@ lib$(LIB_SHARED).so
 
 lib$(LIB_STATIC)-$(VERSION).a:	$(OBS)
