@@ -12,5 +12,10 @@
 // start up the thread to service a client.
 #define DEFAULT_BACKLOG          (50)
 
+// The timeout in seconds to wait for a new connection before checking
+// if the user/OS requested a shutdown of the process.
+#define TIMEOUT_TO_SHUTDOWN      (1)
+
+
 #endif
 
