@@ -16,6 +16,11 @@
 // if the user/OS requested a shutdown of the process.
 #define TIMEOUT_TO_SHUTDOWN      (1)
 
+// The maximum line length for HTTP requests and HTTP headers. Most
+// webservers impose a maximum length of 4096 bytes for each line in the
+// request or the header. This is usually sufficient.
+#define MAX_HTTP_LINE_LENGTH     (4096)
+
 
 #endif
 

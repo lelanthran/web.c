@@ -64,7 +64,7 @@ CFLAGS=  -c -fPIC \
 	-Wjump-misses-init \
 	-Wformat=2
 LD=gcc
-LDFLAGS=
+LDFLAGS= -lpthread
 
 all: $(BINPROG_SHARED)-$(VERSION) $(BINPROG_STATIC)-$(VERSION)
 
