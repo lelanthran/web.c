@@ -8,6 +8,7 @@ int main (int argc, char **argv)
    argc = argc;
    argv = argv;
    printf ("Starting the web.c server\n");
-   return 0;
+
+   return web_main ();
 }
 

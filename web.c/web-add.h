@@ -6,6 +6,7 @@
 extern "C" {
 #endif
 
+   int web_main (void);
 
 #ifdef __cplusplus
 };
