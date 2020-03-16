@@ -14,21 +14,9 @@
 
 #include <pthread.h>
 
+#include "resource.h"
 #include "util.h"
 #include "config.h"
-
-enum method_t {
-   method_UNKNOWN = 0,
-   method_GET,
-   method_HEAD,
-   method_POST,
-   method_PUT,
-   method_DELETE,
-   method_TRACE,
-   method_OPTIONS,
-   method_CONNECT,
-   method_PATCH
-};
 
 static enum method_t get_rqst_method (const char *rqst_line)
 {
@@ -56,15 +44,6 @@ static enum method_t get_rqst_method (const char *rqst_line)
 
    return method_UNKNOWN;
 }
-
-enum http_version_t {
-   http_version_UNKNOWN = 0,
-   http_version_0_9,
-   http_version_1_0,
-   http_version_1_1,
-   http_version_2_0,
-   http_version_3_0,
-};
 
 static enum http_version_t get_rqst_version (const char *rqst_line)
 {
@@ -113,6 +92,9 @@ static char *get_rqst_resource (const char *rqst_line)
    ret[len] = 0;
    return ret;
 }
+
+/* ******************************************************************* */
+
 
 /* Should really define __GNU_SOURCE or set the correct -std flag instead of
  * doing this.
@@ -268,16 +250,6 @@ static bool fd_read_line (int fd, char **dst, size_t *dstlen)
    return true;
 }
 
-static bool perform_request (int fd, const struct thread_args_t *args,
-                                     enum method_t method,
-                                     char *resource,
-                                     enum http_version_t version,
-                                     char *rqst_line, size_t rqst_line_len,
-                                     char **headers, size_t *header_lens)
-{
-   return false;
-}
-
 #define THRD_LOG(addr,port,...)      do {\
       fprintf (stderr, "%s:%d: [%s:%u] ", __FILE__, __LINE__, addr, port);\
       fprintf (stderr, __VA_ARGS__);\
@@ -291,6 +263,7 @@ static void *thread_func (void *ta)
    enum method_t method = 0;
    char *resource = NULL;
    enum http_version_t version = 0;
+   resource_handler_t *resource_handler = NULL;
 
    char *rqst_line = NULL;
    size_t rqst_line_len = 0;
@@ -344,8 +317,9 @@ static void *thread_func (void *ta)
    method = get_rqst_method (rqst_line);
    resource = get_rqst_resource (rqst_line);
    version = get_rqst_version (rqst_line);
+   resource_handler = resource_handler_find (resource);
 
-   if (!method || !resource || !version) {
+   if (!method || !resource || !version || !resource_handler) {
       THRD_LOG (args->remote_addr, args->remote_port, "Malformed request[%s]\n",
                  rqst_line);
       goto errorexit;

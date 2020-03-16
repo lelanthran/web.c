@@ -12,6 +12,29 @@
       fprintf (stderr, __VA_ARGS__);\
 } while (0)
 
+enum method_t {
+   method_UNKNOWN = 0,
+   method_GET,
+   method_HEAD,
+   method_POST,
+   method_PUT,
+   method_DELETE,
+   method_TRACE,
+   method_OPTIONS,
+   method_CONNECT,
+   method_PATCH
+};
+
+enum http_version_t {
+   http_version_UNKNOWN = 0,
+   http_version_0_9,
+   http_version_1_0,
+   http_version_1_1,
+   http_version_2_0,
+   http_version_3_0,
+};
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif

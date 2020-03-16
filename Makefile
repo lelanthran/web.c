@@ -19,6 +19,7 @@ VERSION=0.0.1-rc
 # here, except replace the file extension ".c" with ".o".
 OBS=\
 	util.o \
+	resource.o \
 	web-add.o
 
 # USER SETS THIS VARIABLE
@@ -32,6 +33,7 @@ INCLUDE_PATHS=\
 HEADERS=\
 	web.c/web-main.h \
 	web.c/util.h \
+	web.c/resource.h \
 	web.c/config.h \
 	web.c/web-add.h
 
