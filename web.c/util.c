@@ -1,5 +1,6 @@
 
 #include <string.h>
+#include <stddef.h>
 
 
 #include <sys/types.h>
@@ -15,6 +16,103 @@
 
 #include "util.h"
 #include "config.h"
+
+enum method_t {
+   method_UNKNOWN = 0,
+   method_GET,
+   method_HEAD,
+   method_POST,
+   method_PUT,
+   method_DELETE,
+   method_TRACE,
+   method_OPTIONS,
+   method_CONNECT,
+   method_PATCH
+};
+
+static enum method_t get_rqst_method (const char *rqst_line)
+{
+   static const struct {
+      const char *name;
+      enum method_t method;
+   } methods[] = {
+      { "UNKNOWN",   method_UNKNOWN  },
+      { "GET",       method_GET      },
+      { "HEAD",      method_HEAD     },
+      { "POST",      method_POST     },
+      { "PUT",       method_PUT      },
+      { "DELETE",    method_DELETE   },
+      { "TRACE",     method_TRACE    },
+      { "OPTIONS",   method_OPTIONS  },
+      { "CONNECT",   method_CONNECT  },
+      { "PATCH",     method_PATCH    },
+   };
+
+   for (size_t i=0; i<sizeof methods/sizeof methods[0]; i++) {
+      if ((memcmp (methods[i].name, rqst_line, strlen (methods[i].name)))==0) {
+         return methods[i].method;
+      }
+   }
+
+   return method_UNKNOWN;
+}
+
+enum http_version_t {
+   http_version_UNKNOWN = 0,
+   http_version_0_9,
+   http_version_1_0,
+   http_version_1_1,
+   http_version_2_0,
+   http_version_3_0,
+};
+
+static enum http_version_t get_rqst_version (const char *rqst_line)
+{
+   static const struct {
+      const char *name;
+      enum http_version_t version;
+   } versions[] = {
+      { "UNKNOWN",      http_version_UNKNOWN  },
+      { "XXXHTTP/0.9",  http_version_0_9      },
+      { "HTTP/1.0",     http_version_1_0      },
+      { "HTTP/1.1",     http_version_1_1      },
+      { "XXXHTTP/2",    http_version_2_0      },
+      { "XXXHTTP/3",    http_version_3_0      },
+   };
+
+   char *tmp = strstr (rqst_line, "HTTP/");
+   if (!tmp)
+      return http_version_UNKNOWN;
+
+   for (size_t i=0; i<sizeof versions/sizeof versions[0]; i++) {
+      if ((memcmp (versions[i].name, tmp, strlen (versions[i].name)))==0) {
+         return versions[i].version;
+      }
+   }
+
+   return http_version_UNKNOWN;
+}
+
+static char *get_rqst_resource (const char *rqst_line)
+{
+   char *start = strchr (rqst_line, ' ');
+   if (!start)
+      return NULL;
+   start++;
+   char *end = strchr (start, ' ');
+   if (!end)
+      return NULL;
+
+   ptrdiff_t len = end - start;
+
+   char *ret = malloc (len + 2);
+   if (!ret)
+      return NULL;
+
+   strncpy (ret, start, len);
+   ret[len] = 0;
+   return ret;
+}
 
 /* Should really define __GNU_SOURCE or set the correct -std flag instead of
  * doing this.
@@ -141,7 +239,43 @@ static struct thread_args_t *thread_args_new (int fd, const char *remote_addr,
 
 static bool fd_read_line (int fd, char **dst, size_t *dstlen)
 {
-   return false; // TODO:
+   char *line = NULL;
+   size_t line_len = 0;
+   char c;
+
+   free (*dst);
+   *dst = NULL;
+   *dstlen = 0;
+
+   while ((read (fd, &c, 1))==1) {
+      char *tmp = realloc (line, line_len + 2);
+      if (!tmp) {
+         UTIL_LOG ("OOM error\n");
+         free (line);
+         return false;
+      }
+      line = tmp;
+      line[line_len++] = c;
+      if (c == '\n' && line[line_len-2] == '\r') {
+         line_len -= 2;
+         line[line_len] = 0;
+         break;
+      }
+   }
+
+   *dst = line;
+   *dstlen = line_len;
+   return true;
+}
+
+static bool perform_request (int fd, const struct thread_args_t *args,
+                                     enum method_t method,
+                                     char *resource,
+                                     enum http_version_t version,
+                                     char *rqst_line, size_t rqst_line_len,
+                                     char **headers, size_t *header_lens)
+{
+   return false;
 }
 
 #define THRD_LOG(addr,port,...)      do {\
@@ -153,6 +287,10 @@ static bool fd_read_line (int fd, char **dst, size_t *dstlen)
 static void *thread_func (void *ta)
 {
    struct thread_args_t *args = ta;
+
+   enum method_t method = 0;
+   char *resource = NULL;
+   enum http_version_t version = 0;
 
    char *rqst_line = NULL;
    size_t rqst_line_len = 0;
@@ -173,6 +311,8 @@ static void *thread_func (void *ta)
       goto errorexit;
    }
 
+   THRD_LOG (args->remote_addr, args->remote_port, "Read header\n");
+
    for (i=0; i<MAX_HTTP_HEADERS; i++) {
       if (!(fd_read_line (args->fd, &headers[i], &header_lens[i]))) {
          THRD_LOG (args->remote_addr, args->remote_port,
@@ -190,7 +330,34 @@ static void *thread_func (void *ta)
                 "Too many headers sent (%zu), ignoring the rest\n", i);
    }
 
+#if 0
+   THRD_LOG (args->remote_addr, args->remote_port, "Collected all headers\n");
+   THRD_LOG (args->remote_addr, args->remote_port,
+             "rqst: [%s]\n", rqst_line);
+
+   for (size_t i=0; headers[i]; i++) {
+      THRD_LOG (args->remote_addr, args->remote_port,
+                "header: [%s]\n", headers[i]);
+   }
+#endif
+
+   method = get_rqst_method (rqst_line);
+   resource = get_rqst_resource (rqst_line);
+   version = get_rqst_version (rqst_line);
+
+   if (!method || !resource || !version) {
+      THRD_LOG (args->remote_addr, args->remote_port, "Malformed request[%s]\n",
+                 rqst_line);
+      goto errorexit;
+   }
+
+   THRD_LOG (args->remote_addr, args->remote_port, "[%i:%s:%i]\n",
+               method, resource, version);
+
 errorexit:
+
+   free (rqst_line);
+   free (resource);
 
    for (i=0; i<MAX_HTTP_HEADERS; i++) {
       free (headers[i]);
@@ -213,7 +380,7 @@ bool start_webserver (int fd, char *remote_addr, uint16_t remote_port)
    pthread_t thread;
    struct thread_args_t *args = NULL;
 
-   if (!(args = thread_args_new (1, remote_addr, remote_port))) {
+   if (!(args = thread_args_new (fd, remote_addr, remote_port))) {
       UTIL_LOG ("[%s:%u] OOM error\n", remote_addr, remote_port);
       goto errorexit;
    }
@@ -238,6 +405,7 @@ bool start_webserver (int fd, char *remote_addr, uint16_t remote_port)
 
 errorexit:
    if (error) {
+      UTIL_LOG ("Thread start failure: closing client fd %i\n", fd);
       close (fd);
       thread_args_del (args);
    }

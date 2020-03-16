@@ -81,6 +81,8 @@ int main (int argc, char **argv)
          goto errorexit;
       }
 
+      UTIL_LOG ("Got client fd %i\n", clientfd);
+
       if (!(start_webserver (clientfd, remote_addr, remote_port))) {
          UTIL_LOG ("Failed to start webserver for client [%s:%u]\n",
                      remote_addr, remote_port);
