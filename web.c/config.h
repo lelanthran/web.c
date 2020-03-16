@@ -19,7 +19,10 @@
 // The maximum line length for HTTP requests and HTTP headers. Most
 // webservers impose a maximum length of 4096 bytes for each line in the
 // request or the header. This is usually sufficient.
-#define MAX_HTTP_LINE_LENGTH     (4096)
+// #define MAX_HTTP_LINE_LENGTH     (4096)
+
+// The maximum number of headers to process before giving up.
+#define MAX_HTTP_HEADERS         (125)
 
 
 #endif
