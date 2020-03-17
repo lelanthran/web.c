@@ -91,11 +91,11 @@ bool resource_global_handler_add (const char *pattern,
 
    g_resources = tmp;
 
-   g_resources[g_resources_len] = NULL;
+   g_resources[g_resources_len + 1] = NULL;
    g_resources_len++;
 
-   memmove (&g_resources[1], &g_resources[g_resources_len - 1],
-               g_resources_len * sizeof g_resources[0]);
+   memmove (&g_resources[1], g_resources,
+            (g_resources_len - 1) * sizeof g_resources[0]);
 
    g_resources[0] = rec;
 
@@ -115,7 +115,9 @@ resource_handler_t *resource_handler_find (const char *resource)
    size_t res_len = strlen (res_ext);
 
    for (size_t i=0; g_resources[i]; i++) {
+      printf ("Comparing [%s:%s]\n", res_ext, g_resources[i]->pattern);
       if ((strncmp (res_ext, g_resources[i]->pattern, res_len))==0) {
+         printf ("Found\n");
          return g_resources[i]->handler;
       }
    }

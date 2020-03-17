@@ -72,8 +72,13 @@ int main (int argc, char **argv)
       goto errorexit;
    }
 
-   if (!(resource_global_handler_add (EXTENSION_HTML, handler_static_file))) {
+   if (!(resource_global_handler_add (EXTENSION_HTML, handler_html))) {
       UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_HTML);
+      goto errorexit;
+   }
+
+   if (!(resource_global_handler_add (EXTENSION_TEXT, handler_static_file))) {
+      UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_TEXT);
       goto errorexit;
    }
 
@@ -107,8 +112,8 @@ int main (int argc, char **argv)
 
       UTIL_LOG ("Got client fd %i\n", clientfd);
 
-      if (!(start_webserver (clientfd, remote_addr, remote_port))) {
-         UTIL_LOG ("Failed to start webserver for client [%s:%u]\n",
+      if (!(handle_conn (clientfd, remote_addr, remote_port))) {
+         UTIL_LOG ("Failed to start response thread for client [%s:%u]\n",
                      remote_addr, remote_port);
          goto errorexit;
       }

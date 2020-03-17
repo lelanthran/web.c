@@ -45,7 +45,7 @@ extern "C" {
                                   char **remote_addr,
                                   uint16_t *remote_port);
 
-   bool start_webserver (int fd, char *remote_addr, uint16_t remote_port);
+   bool handle_conn (int fd, char *remote_addr, uint16_t remote_port);
 
 #ifdef __cplusplus
 };

@@ -7,13 +7,13 @@
 
 #include "util.h"
 
-typedef bool (resource_handler_t) (int                    fd,
-                                   char                  *remote_addr,
-                                   uint16_t               remote_port,
-                                   enum method_t          method,
-                                   enum http_version_t    version,
-                                   const char            *resource,
-                                   char                 **headers);
+typedef int (resource_handler_t) (int                    fd,
+                                  char                  *remote_addr,
+                                  uint16_t               remote_port,
+                                  enum method_t          method,
+                                  enum http_version_t    version,
+                                  const char            *resource,
+                                  char                 **headers);
 
 #ifdef __cplusplus
 extern "C" {

@@ -256,9 +256,119 @@ static bool fd_read_line (int fd, char **dst, size_t *dstlen)
 } while (0)
 
 
+const char *get_http_rspstr (status)
+{
+   static const struct {
+      int status;
+      const char *string;
+   } statuses[] = {
+      {  100,  "100 Continue"                                            },
+      {  101,  "101 Switching Protocols"                                 },
+      {  102,  "102 Processing (WebDAV; RFC 2518)"                       },
+      {  103,  "103 Checkpoint"                                          },
+      {  103,  "103 Early Hints (RFC 8297)"                              },
+      {  200,  "200 OK"                                                  },
+      {  201,  "201 Created"                                             },
+      {  202,  "202 Accepted"                                            },
+      {  203,  "203 Non-Authoritative Information (since HTTP/1.1)"      },
+      {  204,  "204 No Content"                                          },
+      {  205,  "205 Reset Content"                                       },
+      {  206,  "206 Partial Content (RFC 7233)"                          },
+      {  207,  "207 Multi-Status (WebDAV; RFC 4918)"                     },
+      {  208,  "208 Already Reported (WebDAV; RFC 5842)"                 },
+      {  218,  "218 This is fine (Apache Web Server)"                    },
+      {  226,  "226 IM Used (RFC 3229)"                                  },
+      {  300,  "300 Multiple Choices"                                    },
+      {  301,  "301 Moved Permanently"                                   },
+      {  302,  "302 Found (Previously \"Moved temporarily\")"            },
+      {  303,  "303 See Other (since HTTP/1.1)"                          },
+      {  304,  "304 Not Modified (RFC 7232)"                             },
+      {  305,  "305 Use Proxy (since HTTP/1.1)"                          },
+      {  306,  "306 Switch Proxy"                                        },
+      {  307,  "307 Temporary Redirect (since HTTP/1.1)"                 },
+      {  308,  "308 Permanent Redirect (RFC 7538)"                       },
+      {  400,  "400 Bad Request"                                         },
+      {  401,  "401 Unauthorized (RFC 7235)"                             },
+      {  402,  "402 Payment Required"                                    },
+      {  403,  "403 Forbidden"                                           },
+      {  404,  "404 Not Found"                                           },
+      {  405,  "405 Method Not Allowed"                                  },
+      {  406,  "406 Not Acceptable"                                      },
+      {  407,  "407 Proxy Authentication Required (RFC 7235)"            },
+      {  408,  "408 Request Timeout"                                     },
+      {  409,  "409 Conflict"                                            },
+      {  410,  "410 Gone"                                                },
+      {  411,  "411 Length Required"                                     },
+      {  412,  "412 Precondition Failed (RFC 7232)"                      },
+      {  413,  "413 Payload Too Large (RFC 7231)"                        },
+      {  414,  "414 URI Too Long (RFC 7231)"                             },
+      {  415,  "415 Unsupported Media Type (RFC 7231)"                   },
+      {  416,  "416 Range Not Satisfiable (RFC 7233)"                    },
+      {  417,  "417 Expectation Failed"                                  },
+      {  418,  "418 I'm a teapot (RFC 2324, RFC 7168)"                   },
+      {  419,  "419 Page Expired (Laravel Framework)"                    },
+      {  420,  "420 Enhance Your Calm (Twitter)"                         },
+      {  420,  "420 Method Failure (Spring Framework)"                   },
+      {  421,  "421 Misdirected Request (RFC 7540)"                      },
+      {  422,  "422 Unprocessable Entity (WebDAV; RFC 4918)"             },
+      {  423,  "423 Locked (WebDAV; RFC 4918)"                           },
+      {  424,  "424 Failed Dependency (WebDAV; RFC 4918)"                },
+      {  425,  "425 Too Early (RFC 8470)"                                },
+      {  426,  "426 Upgrade Required"                                    },
+      {  428,  "428 Precondition Required (RFC 6585)"                    },
+      {  429,  "429 Too Many Requests (RFC 6585)"                        },
+      {  430,  "430 Request Header Fields Too Large (Shopify)"           },
+      {  431,  "431 Request Header Fields Too Large (RFC 6585)"          },
+      {  440,  "440 Login Time-out"                                      },
+      {  444,  "444 No Response"                                         },
+      {  449,  "449 Retry With"                                          },
+      {  450,  "450 Blocked by Windows Parental Controls (Microsoft)"    },
+      {  451,  "451 Redirect"                                            },
+      {  451,  "451 Unavailable For Legal Reasons (RFC 7725)"            },
+      {  494,  "494 Request header too large"                            },
+      {  495,  "495 SSL Certificate Error"                               },
+      {  496,  "496 SSL Certificate Required"                            },
+      {  497,  "497 HTTP Request Sent to HTTPS Port"                     },
+      {  498,  "498 Invalid Token (Esri)"                                },
+      {  499,  "499 Client Closed Request"                               },
+      {  499,  "499 Token Required (Esri)"                               },
+      {  500,  "500 Internal Server Error"                               },
+      {  501,  "501 Not Implemented"                                     },
+      {  502,  "502 Bad Gateway"                                         },
+      {  503,  "503 Service Unavailable"                                 },
+      {  504,  "504 Gateway Timeout"                                     },
+      {  505,  "505 HTTP Version Not Supported"                          },
+      {  506,  "506 Variant Also Negotiates (RFC 2295)"                  },
+      {  507,  "507 Insufficient Storage (WebDAV; RFC 4918)"             },
+      {  508,  "508 Loop Detected (WebDAV; RFC 5842)"                    },
+      {  509,  "509 Bandwidth Limit Exceeded (Apache Web Server/cPanel)" },
+      {  510,  "510 Not Extended (RFC 2774)"                             },
+      {  511,  "511 Network Authentication Required (RFC 6585)"          },
+      {  520,  "520 Web Server Returned an Unknown Error"                },
+      {  521,  "521 Web Server Is Down"                                  },
+      {  522,  "522 Connection Timed Out"                                },
+      {  523,  "523 Origin Is Unreachable"                               },
+      {  524,  "524 A Timeout Occurred"                                  },
+      {  525,  "525 SSL Handshake Failed"                                },
+      {  526,  "526 Invalid SSL Certificate"                             },
+      {  527,  "527 Railgun Error"                                       },
+      {  529,  "529 Site is overloaded"                                  },
+      {  530,  "530 Site is frozen"                                      },
+      {  598,  "598 (Informal convention) Network read timeout error"    },
+   };
+
+   for (size_t i=0; i<sizeof statuses/sizeof statuses[0]; i++) {
+      if (statuses[i].status == status)
+         return statuses[i].string;
+   }
+
+   return "HTTP/1.1 500 Internal Server Error";
+}
+
 static void *thread_func (void *ta)
 {
-   const char *rsp_line = "HTTP/1.1 500 Internal Server Error";
+   int status = 500;
+   const char *rsp_line = NULL;
 
    struct thread_args_t *args = ta;
 
@@ -284,7 +394,7 @@ static void *thread_func (void *ta)
    if (!(fd_read_line (args->fd, &rqst_line, &rqst_line_len))) {
       THRD_LOG (args->remote_addr, args->remote_port,
                 "Malformed request line: [%s]. Aborting.\n", rqst_line);
-      rsp_line = "HTTP/1.1 400 Bad Request\r\n\r\n";
+      status = 400;
       goto errorexit;
    }
 
@@ -294,7 +404,7 @@ static void *thread_func (void *ta)
       if (!(fd_read_line (args->fd, &headers[i], &header_lens[i]))) {
          THRD_LOG (args->remote_addr, args->remote_port,
                    "Unexpected end of headers");
-         rsp_line = "HTTP/1.1 400 Bad Request\r\n\r\n";
+         status = 400;
          goto errorexit;
       }
       if (header_lens[i]==0) {
@@ -328,30 +438,30 @@ static void *thread_func (void *ta)
       THRD_LOG (args->remote_addr, args->remote_port,
                 "Unrecognised method, version or resource [%s]\n",
                  rqst_line);
-      rsp_line = "HTTP/1.1 400 Bad Request\r\n\r\n";
+      status = 400;
       goto errorexit;
    }
 
    resource = (org_resource[0]=='/') ? &org_resource[1] : org_resource;
 
-   if (!(resource_handler (args->fd, args->remote_addr, args->remote_port,
-                           method, version, resource, headers))) {
-      THRD_LOG (args->remote_addr, args->remote_port,
-                "Failed to execute handler for [%s]\n", rqst_line);
-      rsp_line = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
-      goto errorexit;
-   }
+   status = resource_handler (args->fd, args->remote_addr, args->remote_port,
+                              method, version, resource, headers);
 
    THRD_LOG (args->remote_addr, args->remote_port, "[%i:%s:%i]\n",
                method, resource, version);
 
-   // rsp_line = "HTTP/1.1 200 OK\r\n\r\n";
-   rsp_line = NULL;
 
 errorexit:
+   rsp_line = get_http_rspstr (status);
 
-   if (rsp_line)
+   rsp_line = rsp_line ? rsp_line : "HTTP/1.1 500 Internal Server Error";
+
+   if (rsp_line) {
       write (args->fd, rsp_line, strlen (rsp_line));
+   } else {
+      THRD_LOG (args->remote_addr, args->remote_port,
+                "No rspstr for status %i\n", status);
+   }
 
    free (rqst_line);
    free (org_resource);
@@ -369,7 +479,7 @@ errorexit:
    return NULL;
 }
 
-bool start_webserver (int fd, char *remote_addr, uint16_t remote_port)
+bool handle_conn (int fd, char *remote_addr, uint16_t remote_port)
 {
    bool error = true;
 
