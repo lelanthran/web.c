@@ -24,6 +24,9 @@
 // The maximum number of headers to process before giving up.
 #define MAX_HTTP_HEADERS         (125)
 
+// The default web-root directory. Note that this can be either absolute
+// (using a leading "/") or relative to the current directory.
+#define DEFAULT_WEB_ROOT          ("www-root")
 
 #endif
 

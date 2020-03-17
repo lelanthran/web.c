@@ -38,6 +38,11 @@ int main (int argc, char **argv)
       goto errorexit;
    }
 
+   if ((chdir (DEFAULT_WEB_ROOT))!=0) {
+      UTIL_LOG ("Failed to switch to web-root [%s]: %m\n", DEFAULT_WEB_ROOT);
+      goto errorexit;
+   }
+
    UTIL_LOG ("Starting the web.c server\n");
 
    /* ************************************************************** */
