@@ -26,7 +26,11 @@
 
 // The default web-root directory. Note that this can be either absolute
 // (using a leading "/") or relative to the current directory.
-#define DEFAULT_WEB_ROOT          ("www-root")
+#define DEFAULT_WEB_ROOT         ("www-root")
+
+// The default patterns that we handle
+#define PATTERN_HTML             ("*.html")
+#define PATTERN_TEXT             ("*.txt")
 
 #endif
 

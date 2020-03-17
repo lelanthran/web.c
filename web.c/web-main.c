@@ -12,6 +12,8 @@
 #include "web-add.h"
 #include "util.h"
 #include "config.h"
+#include "resource.h"
+#include "handler.h"
 
 static char *g_portnum = NULL;
 static volatile sig_atomic_t g_exit_program = 0;
@@ -60,6 +62,23 @@ int main (int argc, char **argv)
 
    if ((signal (SIGINT, signal_handler))==SIG_ERR) {
       UTIL_LOG ("Failed to install signal handler: %m\n");
+      goto errorexit;
+   }
+
+   /* ************************************************************** */
+
+   if (!(resource_global_handler_lock())) {
+      UTIL_LOG ("Failed to aquire global resource handler lock\n");
+      goto errorexit;
+   }
+
+   if (!(resource_global_handler_add (PATTERN_HTML, handler_static_file))) {
+      UTIL_LOG ("Failed to add handler [%s]\n", PATTERN_HTML);
+      goto errorexit;
+   }
+
+   if (!(resource_global_handler_unlock())) {
+      UTIL_LOG ("Failed to release global resource handler lock\n");
       goto errorexit;
    }
 

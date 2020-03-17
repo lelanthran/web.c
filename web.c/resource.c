@@ -40,13 +40,13 @@ static struct res_rec_t *res_rec_new (const char *pattern,
 static pthread_mutex_t g_resources_lock;
 static bool lock_initialised = false;
 
-static void resource_handler_freelock (void)
+static void resource_global_handler_freelock (void)
 {
-   resource_handler_unlock ();
+   resource_global_handler_unlock ();
    pthread_mutex_destroy (&g_resources_lock);
 }
 
-bool resource_handler_lock (void)
+bool resource_global_handler_lock (void)
 {
    if (!lock_initialised) {
       pthread_mutexattr_t attr;
@@ -54,13 +54,13 @@ bool resource_handler_lock (void)
       pthread_mutexattr_settype (&attr, PTHREAD_MUTEX_RECURSIVE);
       pthread_mutex_init (&g_resources_lock, &attr);
       pthread_mutexattr_destroy (&attr);
-      atexit (resource_handler_freelock);
+      atexit (resource_global_handler_freelock);
       lock_initialised = true;
    }
    return pthread_mutex_lock (&g_resources_lock) == 0 ? true : false;
 }
 
-bool resource_handler_unlock (void)
+bool resource_global_handler_unlock (void)
 {
    return pthread_mutex_unlock (&g_resources_lock) == 0 ? true : false;
 }
