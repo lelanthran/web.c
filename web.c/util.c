@@ -258,9 +258,12 @@ static bool fd_read_line (int fd, char **dst, size_t *dstlen)
 
 static void *thread_func (void *ta)
 {
+   const char *rsp_line = "HTTP/1.1 500 Internal Server Error";
+
    struct thread_args_t *args = ta;
 
    enum method_t method = 0;
+   char *org_resource = NULL;
    char *resource = NULL;
    enum http_version_t version = 0;
    resource_handler_t *resource_handler = NULL;
@@ -281,6 +284,7 @@ static void *thread_func (void *ta)
    if (!(fd_read_line (args->fd, &rqst_line, &rqst_line_len))) {
       THRD_LOG (args->remote_addr, args->remote_port,
                 "Malformed request line: [%s]. Aborting.\n", rqst_line);
+      rsp_line = "HTTP/1.1 400 Bad Request\r\n\r\n";
       goto errorexit;
    }
 
@@ -290,6 +294,7 @@ static void *thread_func (void *ta)
       if (!(fd_read_line (args->fd, &headers[i], &header_lens[i]))) {
          THRD_LOG (args->remote_addr, args->remote_port,
                    "Unexpected end of headers");
+         rsp_line = "HTTP/1.1 400 Bad Request\r\n\r\n";
          goto errorexit;
       }
       if (header_lens[i]==0) {
@@ -315,33 +320,41 @@ static void *thread_func (void *ta)
 #endif
 
    method = get_rqst_method (rqst_line);
-   resource = get_rqst_resource (rqst_line);
+   org_resource = get_rqst_resource (rqst_line);
    version = get_rqst_version (rqst_line);
-   resource_handler = resource_handler_find (resource);
+   resource_handler = resource_handler_find (org_resource);
 
-   if (!method || !resource || !version || !resource_handler) {
-      THRD_LOG (args->remote_addr, args->remote_port, "Malformed request[%s]\n",
+   if (!method || !org_resource || !version || !resource_handler) {
+      THRD_LOG (args->remote_addr, args->remote_port,
+                "Unrecognised method, version or resource [%s]\n",
                  rqst_line);
+      rsp_line = "HTTP/1.1 400 Bad Request\r\n\r\n";
       goto errorexit;
    }
 
-   if (resource[0]=='/')
-      resource++;
+   resource = (org_resource[0]=='/') ? &org_resource[1] : org_resource;
 
    if (!(resource_handler (args->fd, args->remote_addr, args->remote_port,
                            method, version, resource, headers))) {
       THRD_LOG (args->remote_addr, args->remote_port,
                 "Failed to execute handler for [%s]\n", rqst_line);
+      rsp_line = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
       goto errorexit;
    }
 
    THRD_LOG (args->remote_addr, args->remote_port, "[%i:%s:%i]\n",
                method, resource, version);
 
+   // rsp_line = "HTTP/1.1 200 OK\r\n\r\n";
+   rsp_line = NULL;
+
 errorexit:
 
+   if (rsp_line)
+      write (args->fd, rsp_line, strlen (rsp_line));
+
    free (rqst_line);
-   free (resource);
+   free (org_resource);
 
    for (i=0; i<MAX_HTTP_HEADERS; i++) {
       free (headers[i]);

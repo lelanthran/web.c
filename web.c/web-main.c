@@ -72,8 +72,8 @@ int main (int argc, char **argv)
       goto errorexit;
    }
 
-   if (!(resource_global_handler_add (PATTERN_HTML, handler_static_file))) {
-      UTIL_LOG ("Failed to add handler [%s]\n", PATTERN_HTML);
+   if (!(resource_global_handler_add (EXTENSION_HTML, handler_static_file))) {
+      UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_HTML);
       goto errorexit;
    }
 

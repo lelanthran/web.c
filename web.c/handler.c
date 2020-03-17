@@ -17,6 +17,12 @@ bool handler_static_file (int                    fd,
    FILE *inf = NULL;
    char buf[32];
 
+   remote_addr = remote_addr;
+   remote_port = remote_port;
+   method = method;
+   version = version;
+   headers = headers;
+
    // TODO: Set the headers, response-type, etc.
    if (!(inf = fopen (resource, "r"))) {
       UTIL_LOG ("Failed to open [%s]: %m\n", resource);
@@ -34,6 +40,8 @@ bool handler_static_file (int                    fd,
    error = false;
 
 errorexit:
+   if (inf)
+      fclose (inf);
 
    return !error;
 }

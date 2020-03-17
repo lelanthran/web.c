@@ -29,8 +29,8 @@
 #define DEFAULT_WEB_ROOT         ("www-root")
 
 // The default patterns that we handle
-#define PATTERN_HTML             ("*.html")
-#define PATTERN_TEXT             ("*.txt")
+#define EXTENSION_HTML             (".html")
+#define EXTENSION_TEXT             (".txt")
 
 #endif
 
