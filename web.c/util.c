@@ -325,6 +325,16 @@ static void *thread_func (void *ta)
       goto errorexit;
    }
 
+   if (resource[0]=='/')
+      resource++;
+
+   if (!(resource_handler (args->fd, args->remote_addr, args->remote_port,
+                           method, version, resource, headers))) {
+      THRD_LOG (args->remote_addr, args->remote_port,
+                "Failed to execute handler for [%s]\n", rqst_line);
+      goto errorexit;
+   }
+
    THRD_LOG (args->remote_addr, args->remote_port, "[%i:%s:%i]\n",
                method, resource, version);
 

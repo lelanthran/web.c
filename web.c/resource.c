@@ -3,6 +3,7 @@
 #include <pthread.h>
 
 #include "resource.h"
+#include "handler.h"
 
 /* *************************************************************** */
 
@@ -68,11 +69,16 @@ bool resource_global_handler_unlock (void)
 /* *************************************************************** */
 
 static struct res_rec_t *g_resources = NULL;
-bool resource_handler_add (const char *pattern, resource_handler_t *handler);
+bool resource_global_handler_add (const char *pattern, resource_handler_t *handler)
+{
+   // TODO: Implement this
+   return true;
+}
 
 
 resource_handler_t *resource_handler_find (const char *resource)
 {
-   return NULL;
+   // TODO: Implement this
+   return handler_static_file;
 }
 

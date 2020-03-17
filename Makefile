@@ -20,6 +20,7 @@ VERSION=0.0.1-rc
 OBS=\
 	util.o \
 	resource.o \
+	handler.o \
 	web-add.o
 
 # USER SETS THIS VARIABLE
@@ -34,6 +35,7 @@ HEADERS=\
 	web.c/web-main.h \
 	web.c/util.h \
 	web.c/resource.h \
+	web.c/handler.h \
 	web.c/config.h \
 	web.c/web-add.h
 
