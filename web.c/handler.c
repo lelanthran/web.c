@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include "handler.h"
+#include "header.h"
 
 
 static int sendfile (int fd, const char *fname)
@@ -28,7 +29,7 @@ static int sendfile (int fd, const char *fname)
       }
    }
 
-   ret = 200;
+   ret = 0;
 
 errorexit:
    if (inf)
@@ -56,15 +57,33 @@ int handler_static_file (int                    fd,
 }
 
 int handler_html (int                    fd,
-                   char                  *remote_addr,
-                   uint16_t               remote_port,
-                   enum method_t          method,
-                   enum http_version_t    version,
-                   const char            *resource,
-                   char                 **headers)
+                  char                  *remote_addr,
+                  uint16_t               remote_port,
+                  enum method_t          method,
+                  enum http_version_t    version,
+                  const char            *resource,
+                  char                 **headers)
 {
-   UTIL_LOG ("Sending html file\n");
-   // TODO: SetCookie, SetHeader, return sendfile (fd, resource);
-   return 200;
+   header_t *header = header_new ();
+   if (!header)
+      return 500;
+
+   UTIL_LOG ("Sending html page\n");
+
+   header_set (header, header_CONTENT_TYPE, "text/html");
+
+
+   char *rsp = get_http_rspstr (200);
+
+   write (fd, rsp, strlen (rsp));
+   write (fd, "\r\n", 2);
+
+   header_write (header, fd);
+
+   int ret = sendfile (fd, resource);
+
+   header_del (header);
+
+   return ret;
 }
 

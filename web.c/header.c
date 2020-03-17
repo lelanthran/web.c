@@ -17,9 +17,10 @@ header_t *header_new (void)
 void header_del (header_t *header)
 {
    if (header) {
-      for (size_t i=0; header->fields[i]; i++) {
+      for (size_t i=0; header->fields && header->fields[i]; i++) {
          free (header->fields[i]);
       }
+      free (header->fields);
       free (header);
    }
 }
@@ -121,7 +122,7 @@ bool header_set (header_t *header, enum header_name_t name, const char *value)
       return false;
 
    size_t name_len = strlen (sname);
-   for (size_t i=0; header->fields[i]; i++) {
+   for (size_t i=0; header->fields && header->fields[i]; i++) {
       if ((strncmp (header->fields[i], sname, name_len))==0) {
          char *tmp = create_header_field (sname, value);
          if (!tmp)
@@ -167,7 +168,7 @@ bool header_clear (header_t *header, enum header_name_t name)
       return false;
 
    size_t name_len = strlen (sname);
-   for (size_t i=0; header->fields[i]; i++) {
+   for (size_t i=0; header->fields && header->fields[i]; i++) {
       if ((strncmp (header->fields[i], sname, name_len))==0) {
          char *tmp = strdup ("");
          if (!tmp)

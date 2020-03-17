@@ -47,6 +47,8 @@ extern "C" {
 
    bool handle_conn (int fd, char *remote_addr, uint16_t remote_port);
 
+   const char *get_http_rspstr (int status);
+
 #ifdef __cplusplus
 };
 #endif
