@@ -1,0 +1,4 @@
+0x90bf396a85492638f0x0flelanthranfWed Mar 18 21:29:02 2020fNeed to catch pipe errors on write to connected sockets. Without that the
+entire server crashes. This can happen when a client (browser) is closed while
+the handler is sending it data.
+fOPENffffffffff
