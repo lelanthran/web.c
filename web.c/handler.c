@@ -1,6 +1,11 @@
 #include <stdio.h>
 #include <errno.h>
+#include <stdint.h>
+#include <inttypes.h>
+#include <string.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include "handler.h"
@@ -52,7 +57,32 @@ int handler_static_file (int                    fd,
    version = version;
    headers = headers;
 
+   struct stat sb;
+
+   header_t *header = header_new ();
+   if (!header)
+      return 500;
+
+   if ((stat (resource, &sb))!=0) {
+      THRD_LOG (remote_addr, remote_port, "Failed to stat [%s]\n", resource);
+      return 500;
+   }
+
+   char slen[25];
+   uint64_t st_size = sb.st_size;
+   sprintf (slen, "%" PRIu64, st_size);
+
+   header_set (header, header_CONTENT_TYPE, "application/octet-stream");
+   header_set (header, header_CONTENT_LENGTH, slen);
+   header_set (header, header_CONTENT_DISPOSITION, "attachment;");
+
+   write (fd, get_http_rspstr (200), strlen (get_http_rspstr (200)));
+
+   header_write (header, fd);
+   header_del (header);
+
    UTIL_LOG ("Sending static file\n");
+
    return sendfile (fd, resource);
 }
 
@@ -72,17 +102,13 @@ int handler_html (int                    fd,
 
    header_set (header, header_CONTENT_TYPE, "text/html");
 
-
-   char *rsp = get_http_rspstr (200);
-
+   const char *rsp = get_http_rspstr (200);
    write (fd, rsp, strlen (rsp));
-   write (fd, "\r\n", 2);
-
    header_write (header, fd);
+   header_del (header);
 
    int ret = sendfile (fd, resource);
 
-   header_del (header);
 
    return ret;
 }

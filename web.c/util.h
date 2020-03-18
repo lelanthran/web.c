@@ -12,6 +12,13 @@
       fprintf (stderr, __VA_ARGS__);\
 } while (0)
 
+#define THRD_LOG(addr,port,...)      do {\
+      fprintf (stderr, "%s:%d: [%s:%u] ", __FILE__, __LINE__, addr, port);\
+      fprintf (stderr, __VA_ARGS__);\
+} while (0)
+
+
+
 enum method_t {
    method_UNKNOWN = 0,
    method_GET,

@@ -65,6 +65,11 @@ int main (int argc, char **argv)
       goto errorexit;
    }
 
+   if ((signal (SIGPIPE, SIG_IGN))==SIG_ERR) {
+      UTIL_LOG ("Failed to block SIGPIPE: %m\n");
+      goto errorexit;
+   }
+
    /* ************************************************************** */
 
    if (!(resource_global_handler_lock())) {
