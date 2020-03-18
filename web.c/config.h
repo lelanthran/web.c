@@ -29,8 +29,27 @@
 #define DEFAULT_WEB_ROOT         ("www-root")
 
 // The default patterns that we handle
-#define EXTENSION_HTML             (".html")
-#define EXTENSION_TEXT             (".txt")
+#define EXTENSION_HTML           (".html")
+#define EXTENSION_TEXT           (".txt")
+#define EXTENSION_DIR            ("/")
+#define EXTENSION_NONE           ("")
+
+
+// Do we follow links or not? This is a dangerous one as it allows a careless
+// administrator to let the client go below the directories in the webserver
+// root.
+#define FOLLOW_SYMLINKS          (1)
+
+
+// The default index file to use when the client does a GET on a directory
+// name.
+#define DEFAULT_INDEX_FILE       ("index.html")
+
+
+// The application identifier, and the version string
+#define APPLICATION_ID           "Web.c"
+#define VERSION_STRING           "0.0.1"
+
 
 #endif
 

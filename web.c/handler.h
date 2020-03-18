@@ -27,6 +27,30 @@ extern "C" {
                      const char            *resource,
                      char                 **headers);
 
+   int handler_none (int                    fd,
+                     char                  *remote_addr,
+                     uint16_t               remote_port,
+                     enum method_t          method,
+                     enum http_version_t    version,
+                     const char            *resource,
+                     char                 **headers);
+
+   int handler_dir (int                    fd,
+                    char                  *remote_addr,
+                    uint16_t               remote_port,
+                    enum method_t          method,
+                    enum http_version_t    version,
+                    const char            *resource,
+                    char                 **headers);
+
+   int handler_dirlist (int                    fd,
+                        char                  *remote_addr,
+                        uint16_t               remote_port,
+                        enum method_t          method,
+                        enum http_version_t    version,
+                        const char            *resource,
+                        char                 **headers);
+
 
 #ifdef __cplusplus
 };

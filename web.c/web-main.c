@@ -77,13 +77,23 @@ int main (int argc, char **argv)
       goto errorexit;
    }
 
-   if (!(resource_global_handler_add (EXTENSION_HTML, handler_html))) {
-      UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_HTML);
+   if (!(resource_global_handler_add (EXTENSION_NONE, handler_none))) {
+      UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_NONE);
+      goto errorexit;
+   }
+
+   if (!(resource_global_handler_add (EXTENSION_DIR, handler_dir))) {
+      UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_DIR);
       goto errorexit;
    }
 
    if (!(resource_global_handler_add (EXTENSION_TEXT, handler_static_file))) {
       UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_TEXT);
+      goto errorexit;
+   }
+
+   if (!(resource_global_handler_add (EXTENSION_HTML, handler_html))) {
+      UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_HTML);
       goto errorexit;
    }
 

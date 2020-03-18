@@ -7,9 +7,11 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <dirent.h>
 
 #include "handler.h"
 #include "header.h"
+#include "config.h"
 
 
 static int sendfile (int fd, const char *fname)
@@ -65,6 +67,7 @@ int handler_static_file (int                    fd,
 
    if ((stat (resource, &sb))!=0) {
       THRD_LOG (remote_addr, remote_port, "Failed to stat [%s]\n", resource);
+      header_del (header);
       return 500;
    }
 
@@ -112,4 +115,148 @@ int handler_html (int                    fd,
 
    return ret;
 }
+
+int handler_none (int                    fd,
+                  char                  *remote_addr,
+                  uint16_t               remote_port,
+                  enum method_t          method,
+                  enum http_version_t    version,
+                  const char            *resource,
+                  char                 **headers)
+{
+   struct stat sb;
+   int (*statfunc) (const char *pathname, struct stat *statbuf);
+
+   statfunc = FOLLOW_SYMLINKS ? lstat : stat;
+
+   if ((statfunc (resource, &sb))!=0) {
+      THRD_LOG (remote_addr, remote_port, "Failed to stat [%s]\n", resource);
+      return 500;
+   }
+
+   if (S_ISREG (sb.st_mode)) {
+      return handler_static_file (fd, remote_addr, remote_port, method,
+                                  version, resource, headers);
+   }
+
+   if (S_ISDIR (sb.st_mode)) {
+      return handler_directory (fd, remote_addr, remote_port, method,
+                                version, resource, headers);
+   }
+
+   return 500;
+}
+
+int handler_dir (int                    fd,
+                 char                  *remote_addr,
+                 uint16_t               remote_port,
+                 enum method_t          method,
+                 enum http_version_t    version,
+                 const char            *resource,
+                 char                 **headers)
+{
+
+   struct stat sb;
+   char *index_html = NULL;
+   size_t index_html_len = 0;
+
+   if ((stat (resource, &sb))!=0) {
+      THRD_LOG (remote_addr, remote_port, "Failed to stat [%s]\n", resource);
+      return 500;
+   }
+
+   if (!(S_ISDIR (sb.st_mode))) {
+      THRD_LOG (remote_addr, remote_port, "Not a directory [%s]\n", resource);
+      return 500;
+   }
+
+   index_html_len = strlen (resource) + 1 + strlen (DEFAULT_INDEX_FILE) + 1;
+   if (!(index_html = malloc (index_html_len))) {
+      THRD_LOG (remote_addr, remote_port, "Out of memory [%s]\n", resource);
+      return 500;
+   }
+
+   strcpy (index_html, resource);
+   strcat (index_html, "/");
+   strcat (index_html, DEFAULT_INDEX_FILE);
+
+   if ((stat (resource, &sb))!=0) {
+      int ret = handler_dirlist (fd, remote_addr, remote_port, method, version,
+                                 resource, headers);
+      free (index_html);
+      return ret;
+   }
+
+   int ret =  handler_html (fd, remote_addr, remote_port, method, version,
+                            index_html);
+
+   free (index_html);
+
+   return ret;
+}
+
+int handler_dirlist (int                    fd,
+                     char                  *remote_addr,
+                     uint16_t               remote_port,
+                     enum method_t          method,
+                     enum http_version_t    version,
+                     const char            *resource,
+                     char                 **headers)
+{
+   static const char *header =
+      "<html>"
+      "  <body>"
+      "  <table>"
+      "     <tr>"
+      "        <th></th>"
+      "        <th>Name</th>"
+      "        <th>Last Modified</th>"
+      "        <th>Size</th>"
+      "        <th>Description</th>"
+      "     </tr>";
+
+   static const char *row =
+      "<tr>"
+      "  <td></td>"
+      "  <td></td>"
+      "  <td></td>"
+      "  <td></td>"
+      "  <td></td>"
+      "</tr>"
+
+   static const char *footer =
+      "  </table>"
+      "  <p>Powered by <em>" APPLICATION_ID "/" VERSION_STRING "</em>"
+      "  </body>"
+      "</html>";
+
+   struct stat sb;
+   char *html = NULL;
+   size_t html_len = 0;
+   DIR *dirp = NULL;
+   struct dirent *de = NULL;
+
+   if (!(dirp = opendir (resource))) {
+      THRD_LOG (remote_addr, remote_port, "Unable to opendir [%s]\n", resource);
+      if (errno==EACCES)
+         return 403;
+      return 500;
+   }
+
+   html_len = strlen (header) + strlen (footer) + 1;
+   if (!(html = malloc (html_len))) {
+      THRD_LOG (remote_addr, remote_port, "Out of memory [%s]\n", resource);
+      return 500;
+   }
+
+   while ((de = readdir (dirp))!=NULL) {
+      html_len += strlen (row) + strlen (name) +
+                  strlen (lm) + strlen (size) +
+                  strlen (description);
+
+      char *tmp = realloc (html, html_len);
+   }
+
+}
+
 
