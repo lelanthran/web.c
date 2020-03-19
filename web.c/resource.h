@@ -7,6 +7,12 @@
 
 #include "util.h"
 
+enum pattern_type_t {
+   pattern_SUFFIX,
+   pattern_PREFIX,
+   pattern_EXACT
+};
+
 typedef int (resource_handler_t) (int                    fd,
                                   char                  *remote_addr,
                                   uint16_t               remote_port,
@@ -22,7 +28,9 @@ extern "C" {
    // Before _add() is called the _lock() function must be called. After all
    // the _add() calls the caller must call the _unlock() function.
    bool resource_global_handler_lock (void);
-   bool resource_global_handler_add (const char *pattern, resource_handler_t *handler);
+   bool resource_global_handler_add (const char *pattern,
+                                     enum pattern_type_t type,
+                                     resource_handler_t *handler);
    bool resource_global_handler_unlock (void);
 
    resource_handler_t *resource_handler_find (const char *resource);

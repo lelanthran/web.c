@@ -9,6 +9,7 @@
 
 struct res_rec_t {
    char                 *pattern;
+   enum pattern_type_t   type;
    resource_handler_t   *handler;
 };
 
@@ -21,6 +22,7 @@ static void res_rec_del (struct res_rec_t *rec)
 }
 
 static struct res_rec_t *res_rec_new (const char *pattern,
+                                      enum pattern_type_t type,
                                       resource_handler_t *handler)
 {
    struct res_rec_t *ret = calloc (1, sizeof *ret);
@@ -32,7 +34,9 @@ static struct res_rec_t *res_rec_new (const char *pattern,
       return NULL;
    }
 
+   ret->type = type;
    ret->handler = handler;
+
    return ret;
 }
 
@@ -76,9 +80,10 @@ bool resource_global_handler_unlock (void)
 /* *************************************************************** */
 
 bool resource_global_handler_add (const char *pattern,
+                                  enum pattern_type_t type,
                                   resource_handler_t *handler)
 {
-   struct res_rec_t *rec = res_rec_new (pattern, handler);
+   struct res_rec_t *rec = res_rec_new (pattern, type, handler);
    if (!rec)
       return false;
 
@@ -108,18 +113,39 @@ resource_handler_t *resource_handler_find (const char *resource)
    if (!resource)
       return handler_static_file;
 
-   char *res_ext = strrchr (resource, '.');
-   if (!res_ext)
-      return handler_static_file;
-
-   size_t res_len = strlen (res_ext);
+   size_t res_len = strlen (resource);
 
    for (size_t i=0; g_resources[i]; i++) {
-      printf ("Comparing [%s:%s]\n", res_ext, g_resources[i]->pattern);
-      if ((strncmp (res_ext, g_resources[i]->pattern, res_len))==0) {
-         printf ("Found\n");
-         return g_resources[i]->handler;
+      size_t pattern_len = strlen (g_resources[i]->pattern);
+
+      printf ("Comparing [%s:%s]\n", resource, g_resources[i]->pattern);
+
+      switch (g_resources[i]->type) {
+
+         case pattern_SUFFIX:
+            if ((strncmp (&resource[res_len - pattern_len],
+                          g_resources[i]->pattern, pattern_len))==0) {
+               printf ("Found: [%s]\n", g_resources[i]->pattern);
+               return g_resources[i]->handler;
+            }
+            break;
+
+         case pattern_PREFIX:
+            if ((strncmp (resource, g_resources[i]->pattern, pattern_len))==0) {
+               printf ("Found: [%s]\n", g_resources[i]->pattern);
+               return g_resources[i]->handler;
+            }
+            break;
+
+         case pattern_EXACT:
+            if ((strncmp (resource, g_resources[i]->pattern, res_len))==0) {
+               printf ("Found: [%s]\n", g_resources[i]->pattern);
+               return g_resources[i]->handler;
+            }
+            break;
+
       }
+
    }
    return handler_static_file;
 }
