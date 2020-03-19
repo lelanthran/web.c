@@ -51,7 +51,8 @@ int handler_static_file (int                    fd,
                           enum method_t          method,
                           enum http_version_t    version,
                           const char            *resource,
-                          char                 **headers)
+                          char                 **headers,
+                          char                  *vars)
 {
    remote_addr = remote_addr;
    remote_port = remote_port;
@@ -68,7 +69,7 @@ int handler_static_file (int                    fd,
    if ((stat (resource, &sb))!=0) {
       THRD_LOG (remote_addr, remote_port, "Failed to stat [%s]\n", resource);
       header_del (header);
-      return 500;
+      return 404;
    }
 
    char slen[25];
@@ -95,7 +96,8 @@ int handler_html (int                    fd,
                   enum method_t          method,
                   enum http_version_t    version,
                   const char            *resource,
-                  char                 **headers)
+                  char                 **headers,
+                  char                 *vars)
 {
    header_t *header = header_new ();
    if (!header)
@@ -122,7 +124,8 @@ int handler_none (int                    fd,
                   enum method_t          method,
                   enum http_version_t    version,
                   const char            *resource,
-                  char                 **headers)
+                  char                 **headers,
+                  char                 *vars)
 {
    struct stat sb;
    int (*statfunc) (const char *pathname, struct stat *statbuf);
@@ -131,17 +134,17 @@ int handler_none (int                    fd,
 
    if ((statfunc (resource, &sb))!=0) {
       THRD_LOG (remote_addr, remote_port, "Failed to stat [%s]\n", resource);
-      return 500;
+      return 404;
    }
 
    if (S_ISREG (sb.st_mode)) {
       return handler_static_file (fd, remote_addr, remote_port, method,
-                                  version, resource, headers);
+                                  version, resource, headers, vars);
    }
 
    if (S_ISDIR (sb.st_mode)) {
       return handler_dir (fd, remote_addr, remote_port, method,
-                          version, resource, headers);
+                          version, resource, headers, vars);
    }
 
    return 500;
@@ -153,7 +156,8 @@ int handler_dir (int                    fd,
                  enum method_t          method,
                  enum http_version_t    version,
                  const char            *resource,
-                 char                 **headers)
+                 char                 **headers,
+                 char                  *vars)
 {
 
    struct stat sb;
@@ -182,13 +186,13 @@ int handler_dir (int                    fd,
 
    if ((stat (resource, &sb))!=0) {
       int ret = handler_dirlist (fd, remote_addr, remote_port, method, version,
-                                 resource, headers);
+                                 resource, headers, vars);
       free (index_html);
       return ret;
    }
 
    int ret =  handler_html (fd, remote_addr, remote_port, method, version,
-                            index_html, headers);
+                            index_html, headers, vars);
 
    free (index_html);
 
@@ -201,7 +205,8 @@ int handler_dirlist (int                    fd,
                      enum method_t          method,
                      enum http_version_t    version,
                      const char            *resource,
-                     char                 **headers)
+                     char                 **headers,
+                     char                 *vars)
 {
    static const char *header =
       "<html>"

@@ -7,50 +7,25 @@
 
 #include "resource.h"
 
+#define HANDLER(x)   int x (int                    fd,            \
+                            char                  *remote_addr,   \
+                            uint16_t               remote_port,   \
+                            enum method_t          method,        \
+                            enum http_version_t    version,       \
+                            const char            *resource,      \
+                            char                 **headers,       \
+                            char                  *vars)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-   int handler_static_file (int                    fd,
-                            char                  *remote_addr,
-                            uint16_t               remote_port,
-                            enum method_t          method,
-                            enum http_version_t    version,
-                            const char            *resource,
-                            char                 **headers);
 
-   int handler_html (int                    fd,
-                     char                  *remote_addr,
-                     uint16_t               remote_port,
-                     enum method_t          method,
-                     enum http_version_t    version,
-                     const char            *resource,
-                     char                 **headers);
-
-   int handler_none (int                    fd,
-                     char                  *remote_addr,
-                     uint16_t               remote_port,
-                     enum method_t          method,
-                     enum http_version_t    version,
-                     const char            *resource,
-                     char                 **headers);
-
-   int handler_dir (int                    fd,
-                    char                  *remote_addr,
-                    uint16_t               remote_port,
-                    enum method_t          method,
-                    enum http_version_t    version,
-                    const char            *resource,
-                    char                 **headers);
-
-   int handler_dirlist (int                    fd,
-                        char                  *remote_addr,
-                        uint16_t               remote_port,
-                        enum method_t          method,
-                        enum http_version_t    version,
-                        const char            *resource,
-                        char                 **headers);
-
+   HANDLER (handler_static_file);
+   HANDLER (handler_html);
+   HANDLER (handler_none);
+   HANDLER (handler_dir);
+   HANDLER (handler_dirlist);
 
 #ifdef __cplusplus
 };

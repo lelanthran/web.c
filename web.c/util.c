@@ -475,7 +475,7 @@ static void *thread_func (void *ta)
    resource = (org_resource[0]=='/') ? &org_resource[1] : org_resource;
 
    status = resource_handler (args->fd, args->remote_addr, args->remote_port,
-                              method, version, resource, headers);
+                              method, version, resource, headers, getvars);
 
    THRD_LOG (args->remote_addr, args->remote_port, "[%i:%s:%i]\n[%s]\n",
                method, org_resource, version, rqst_line);
