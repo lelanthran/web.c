@@ -416,7 +416,8 @@ static void *thread_func (void *ta)
       goto errorexit;
    }
 
-   THRD_LOG (args->remote_addr, args->remote_port, "Read header\n");
+   THRD_LOG (args->remote_addr, args->remote_port, "REQUEST: [%s]\n",
+               rqst_line);
 
    for (i=0; i<MAX_HTTP_HEADERS; i++) {
       if (!(fd_read_line (args->fd, &headers[i], &header_lens[i]))) {
@@ -463,13 +464,21 @@ static void *thread_func (void *ta)
       goto errorexit;
    }
 
+   if ((strstr (org_resource, ".."))!=NULL) {
+      THRD_LOG (args->remote_addr, args->remote_port,
+                "Attempt to access parent directory [%s]\n",
+                 rqst_line);
+      status = 403;
+      goto errorexit;
+   }
+
    resource = (org_resource[0]=='/') ? &org_resource[1] : org_resource;
 
    status = resource_handler (args->fd, args->remote_addr, args->remote_port,
                               method, version, resource, headers);
 
-   THRD_LOG (args->remote_addr, args->remote_port, "[%i:%s:%i]\n",
-               method, resource, version);
+   THRD_LOG (args->remote_addr, args->remote_port, "[%i:%s:%i]\n[%s]\n",
+               method, org_resource, version, rqst_line);
 
 
 errorexit:
