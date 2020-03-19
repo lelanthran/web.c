@@ -78,6 +78,29 @@ static char *get_rqst_resource (const char *rqst_line)
    if (!start)
       return NULL;
    start++;
+   char *end = strchr (start, '?');
+   if (!end)
+      end = strchr (start, ' ');
+   if (!end)
+      return NULL;
+
+   ptrdiff_t len = end - start;
+
+   char *ret = malloc (len + 2);
+   if (!ret)
+      return NULL;
+
+   strncpy (ret, start, len);
+   ret[len] = 0;
+   return ret;
+}
+
+static char *get_rqst_getvars (const char *rqst_line)
+{
+   char *start = strchr (rqst_line, '?');
+   if (!start)
+      return NULL;
+   start++;
    char *end = strchr (start, ' ');
    if (!end)
       return NULL;
@@ -369,6 +392,7 @@ static void *thread_func (void *ta)
    enum method_t method = 0;
    char *org_resource = NULL;
    char *resource = NULL;
+   char *getvars = NULL;
    enum http_version_t version = 0;
    resource_handler_t *resource_handler = NULL;
 
@@ -426,7 +450,10 @@ static void *thread_func (void *ta)
    method = get_rqst_method (rqst_line);
    org_resource = get_rqst_resource (rqst_line);
    version = get_rqst_version (rqst_line);
+   getvars = get_rqst_getvars (rqst_line);
    resource_handler = resource_handler_find (org_resource);
+
+   THRD_LOG (args->remote_addr, args->remote_port, "vars: [%s]\n", getvars);
 
    if (!method || !org_resource || !version || !resource_handler) {
       THRD_LOG (args->remote_addr, args->remote_port,
@@ -464,6 +491,7 @@ errorexit:
 
    free (rqst_line);
    free (org_resource);
+   free (getvars);
 
    for (i=0; i<MAX_HTTP_HEADERS; i++) {
       free (headers[i]);
