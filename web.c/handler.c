@@ -166,7 +166,7 @@ int handler_dir (int                    fd,
 
    if ((stat (resource, &sb))!=0) {
       THRD_LOG (remote_addr, remote_port, "Failed to stat [%s]\n", resource);
-      return 500;
+      return 404;
    }
 
    if (!(S_ISDIR (sb.st_mode))) {
@@ -181,10 +181,11 @@ int handler_dir (int                    fd,
    }
 
    strcpy (index_html, resource);
-   strcat (index_html, "/");
    strcat (index_html, DEFAULT_INDEX_FILE);
 
-   if ((stat (resource, &sb))!=0) {
+   THRD_LOG (remote_addr, remote_port, "Trying [%s]\n", index_html);
+
+   if ((stat (index_html, &sb))!=0) {
       int ret = handler_dirlist (fd, remote_addr, remote_port, method, version,
                                  resource, headers, vars);
       free (index_html);
@@ -236,8 +237,6 @@ int handler_dirlist (int                    fd,
       "</html>";
 
    struct stat sb;
-   char *html = NULL;
-   size_t html_len = 0;
    DIR *dirp = NULL;
    struct dirent *de = NULL;
 
@@ -248,24 +247,28 @@ int handler_dirlist (int                    fd,
       return 500;
    }
 
-   html_len = strlen (header) + strlen (footer) + 1;
-   if (!(html = malloc (html_len))) {
-      THRD_LOG (remote_addr, remote_port, "Out of memory [%s]\n", resource);
-      return 500;
-   }
+   const char *rsp = get_http_rspstr (200);
+   write (fd, rsp, strlen (rsp));
 
+   write (fd, "Content-type: text/html\r\n\r\n", 27);
+
+   write (fd, "<html>", 6);
+   write (fd, "<body>", 6);
+   write (fd, "<ul>", 4);
    while ((de = readdir (dirp))!=NULL) {
-      html_len += strlen (row) + strlen (de->d_name) + 1;
-      char *tmp = realloc (html, html_len);
-      if (!tmp)
-         return 500;
-      html = tmp;
-      strcat (html, de->d_name);
+      write (fd, "<li>", 4);
+      write (fd, de->d_name, strlen (de->d_name));
+      write (fd, "</li>", 5);
    }
+   write (fd, "</ul>", 5);
+   write (fd, "</body>", 7);
+   write (fd, "</html>", 7);
 
    // header_write (header, fd);
 
-   return 500;
+   closedir (dirp);
+
+   return 0;
 }
 
 

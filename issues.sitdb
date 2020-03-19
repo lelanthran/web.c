@@ -5,3 +5,12 @@ fCLOSEDfffflelanthranfWed Mar 18 21:34:23 2020fFixed by using signal() to
 to be returned as an error to the wirte call where it is correctly handled as
 an error.
 ffff
+0x7e9416192a6ce2a1f0x0flelanthranfThu Mar 19 23:07:07 2020fSpecifying a directory without the trailing '/' results in a directory index
+being shown. This is not the desired behaviour - the server should realise
+that **even without** the trailing '/' there is a directory involved and
+should invoke the directory handler.
+
+Maybe make this change in the directory handler so that it first stats the
+index.html file (if it exists).
+
+fOPENffffffffff

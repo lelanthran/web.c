@@ -125,21 +125,21 @@ resource_handler_t *resource_handler_find (const char *resource)
          case pattern_SUFFIX:
             if ((strncmp (&resource[res_len - pattern_len],
                           g_resources[i]->pattern, pattern_len))==0) {
-               printf ("Found: [%s]\n", g_resources[i]->pattern);
+               printf ("Found suffix: [%s]\n", g_resources[i]->pattern);
                return g_resources[i]->handler;
             }
             break;
 
          case pattern_PREFIX:
             if ((strncmp (resource, g_resources[i]->pattern, pattern_len))==0) {
-               printf ("Found: [%s]\n", g_resources[i]->pattern);
+               printf ("Found prefix: [%s]\n", g_resources[i]->pattern);
                return g_resources[i]->handler;
             }
             break;
 
          case pattern_EXACT:
             if ((strncmp (resource, g_resources[i]->pattern, res_len))==0) {
-               printf ("Found: [%s]\n", g_resources[i]->pattern);
+               printf ("Found exact: [%s]\n", g_resources[i]->pattern);
                return g_resources[i]->handler;
             }
             break;
