@@ -140,8 +140,8 @@ int handler_none (int                    fd,
    }
 
    if (S_ISDIR (sb.st_mode)) {
-      return handler_directory (fd, remote_addr, remote_port, method,
-                                version, resource, headers);
+      return handler_dir (fd, remote_addr, remote_port, method,
+                          version, resource, headers);
    }
 
    return 500;
@@ -188,7 +188,7 @@ int handler_dir (int                    fd,
    }
 
    int ret =  handler_html (fd, remote_addr, remote_port, method, version,
-                            index_html);
+                            index_html, headers);
 
    free (index_html);
 
@@ -222,7 +222,7 @@ int handler_dirlist (int                    fd,
       "  <td></td>"
       "  <td></td>"
       "  <td></td>"
-      "</tr>"
+      "</tr>";
 
    static const char *footer =
       "  </table>"
@@ -250,13 +250,17 @@ int handler_dirlist (int                    fd,
    }
 
    while ((de = readdir (dirp))!=NULL) {
-      html_len += strlen (row) + strlen (name) +
-                  strlen (lm) + strlen (size) +
-                  strlen (description);
-
+      html_len += strlen (row) + strlen (de->d_name) + 1;
       char *tmp = realloc (html, html_len);
+      if (!tmp)
+         return 500;
+      html = tmp;
+      strcat (html, de->d_name);
    }
 
+   // header_write (header, fd);
+
+   return 500;
 }
 
 

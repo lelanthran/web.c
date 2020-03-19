@@ -356,7 +356,7 @@ const char *get_http_rspstr (int status)
          return statuses[i].string;
    }
 
-   return "HTTP/1.1 500 Internal Server Error";
+   return NULL;
 }
 
 static void *thread_func (void *ta)
@@ -448,10 +448,15 @@ static void *thread_func (void *ta)
 errorexit:
    rsp_line = get_http_rspstr (status);
 
-   rsp_line = rsp_line ? rsp_line : "HTTP/1.1 500 Internal Server Error";
+   rsp_line = status ? get_http_rspstr (status)
+                     : "HTTP/1.1 500 Internal Server Error";
 
-   if (status && rsp_line) {
+   if (status) {
       write (args->fd, rsp_line, strlen (rsp_line));
+      if ((status / 100 ) != 2) {
+         write (args->fd, "\r\n\r\n", 4);
+         write (args->fd, rsp_line, strlen (rsp_line));
+      }
    } else {
       THRD_LOG (args->remote_addr, args->remote_port,
                 "No rspstr for status %i\n", status);
