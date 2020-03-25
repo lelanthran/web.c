@@ -68,7 +68,7 @@ static int local_sendfile (int fd, const char *fname, uint64_t offset,
       nbytes -= rc;
    }
 
-   ret = 0;
+   ret = 200;
 
 errorexit:
    if (in_fd >= 0)
@@ -94,28 +94,21 @@ int handler_static_file (int                    fd,
    version = version;
    rqst_headers = rqst_headers;
 
-   header_t *header = header_new ();
-   if (!header)
-      return 500;
-
-
    char slen[25];
    uint64_t st_size;
    if ((statcode = get_filesize (resource, slen, &st_size))!=200) {
       THRD_LOG (remote_addr, remote_port, "Failed to access file [%s]\n",
                                           resource);
-      header_del (header);
       return statcode;
    }
 
-   header_set (header, header_CONTENT_TYPE, "application/octet-stream");
-   header_set (header, header_CONTENT_LENGTH, slen);
-   header_set (header, header_CONTENT_DISPOSITION, "attachment;");
+   header_set (rsp_headers, header_CONTENT_TYPE, "application/octet-stream");
+   header_set (rsp_headers, header_CONTENT_LENGTH, slen);
+   header_set (rsp_headers, header_CONTENT_DISPOSITION, "attachment;");
 
    write (fd, get_http_rspstr (200), strlen (get_http_rspstr (200)));
 
-   header_write (header, fd);
-   header_del (header);
+   header_write (rsp_headers, fd);
 
    UTIL_LOG ("Sending static file\n");
 
@@ -132,23 +125,25 @@ int handler_html (int                    fd,
                   header_t              *rsp_headers,
                   char                  *vars)
 {
-   header_t *header = header_new ();
-   if (!header)
-      return 500;
-
    UTIL_LOG ("Sending html page\n");
 
-   header_set (header, header_CONTENT_TYPE, "text/html");
+   char slen[25];
+   uint64_t st_size;
+   int statcode = 0;
+   if ((statcode = get_filesize (resource, slen, &st_size))!=200) {
+      THRD_LOG (remote_addr, remote_port, "Failed to access file [%s]\n",
+                                          resource);
+      return statcode;
+   }
+
+   header_set (rsp_headers, header_CONTENT_TYPE, "text/html");
+   header_set (rsp_headers, header_CONTENT_LENGTH, slen);
 
    const char *rsp = get_http_rspstr (200);
    write (fd, rsp, strlen (rsp));
-   header_write (header, fd);
-   header_del (header);
+   header_write (rsp_headers, fd);
 
-   int ret = local_sendfile (fd, resource, 0, (size_t)-1);
-
-
-   return ret;
+   return local_sendfile (fd, resource, 0, st_size);
 }
 
 int handler_none (int                    fd,
@@ -204,8 +199,13 @@ int handler_dir (int                    fd,
    char *index_html = NULL;
    size_t index_html_len = 0;
 
+   if (resource[0] == 0) {
+      resource = "www-root";
+   }
+
    if ((stat (resource, &sb))!=0) {
-      THRD_LOG (remote_addr, remote_port, "Failed to stat [%s]\n", resource);
+      THRD_LOG (remote_addr, remote_port,
+                  "In dir [%s] Failed to stat [%s]: %m\n", getenv ("PWD"), resource);
       return 404;
    }
 

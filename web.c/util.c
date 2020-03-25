@@ -349,7 +349,7 @@ const char *get_http_rspstr (int status)
       {  497,  "HTTP/1.1 497 HTTP Request Sent to HTTPS Port\r\n"       },
       {  498,  "HTTP/1.1 498 Invalid Token \r\n"                        },
       {  499,  "HTTP/1.1 499 Client Closed Request\r\n"                 },
-      {  499,  "HTTP/1.1 499 Token Required \r\n"                       },
+      // {  499,  "HTTP/1.1 499 Token Required \r\n"                       },
       {  500,  "HTTP/1.1 500 Internal Server Error\r\n"                 },
       {  501,  "HTTP/1.1 501 Not Implemented\r\n"                       },
       {  502,  "HTTP/1.1 502 Bad Gateway\r\n"                           },
@@ -488,25 +488,19 @@ static void *thread_func (void *ta)
                               rqst_headers, rsp_headers,
                               getvars);
 
-   THRD_LOG (args->remote_addr, args->remote_port, "[%i:%s:%i]\n[%s]\n",
-               method, org_resource, version, rqst_line);
-
+   THRD_LOG (args->remote_addr, args->remote_port, "%i [%i:%s:%i]\n[%s]\n",
+               status, method, org_resource, version, rqst_line);
 
 errorexit:
-   rsp_line = get_http_rspstr (status);
 
-   rsp_line = status ? get_http_rspstr (status)
-                     : "HTTP/1.1 500 Internal Server Error";
-
-   if (status) {
+   if (!status || status!=200) {
+      rsp_line = get_http_rspstr (status);
       write (args->fd, rsp_line, strlen (rsp_line));
-      if ((status / 100 ) != 2) {
-         write (args->fd, "\r\n\r\n", 4);
-         write (args->fd, rsp_line, strlen (rsp_line));
-      }
-   } else {
-      THRD_LOG (args->remote_addr, args->remote_port,
-                "No rspstr for status %i\n", status);
+      write (args->fd, "\r\n\r\n", 4);
+      char outbuf[100];
+      snprintf (outbuf, sizeof outbuf, "Error: %i\n", status);
+      write (args->fd, outbuf, strlen (outbuf));
+      write (args->fd, "\r\n\r\n", 4);
    }
 
    free (rqst_line);
@@ -516,6 +510,7 @@ errorexit:
    for (i=0; i<MAX_HTTP_HEADERS; i++) {
       free (rqst_headers[i]);
    }
+   header_del (rsp_headers);
 
    shutdown (args->fd, SHUT_RDWR);
    close (args->fd);
