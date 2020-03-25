@@ -8,73 +8,100 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <fcntl.h>
+
+#include <sys/sendfile.h>
 
 #include "handler.h"
 #include "header.h"
 #include "config.h"
 
+static int get_filesize (const char *fname, char *dst_sizestr,
+                                            uint64_t *dst_size64)
+{
+   struct stat sb;
 
-static int sendfile (int fd, const char *fname)
+   if ((stat (fname, &sb))!=0) {
+      UTIL_LOG ("Failed to stat [%s]: %m\n", fname);
+      if (errno == EACCES) {
+         return 403;
+      } else {
+         return 404;
+      }
+   }
+
+   uint64_t st_size = sb.st_size;
+
+   if (dst_sizestr)
+      sprintf (dst_sizestr, "%" PRIu64, st_size);
+
+   if (dst_size64)
+      *dst_size64 = st_size;
+
+   return 200;
+}
+
+static int local_sendfile (int fd, const char *fname, uint64_t offset,
+                                                      uint64_t count)
 {
    int ret = 500;
 
-   FILE *inf = NULL;
-   char buf[32];
+   int in_fd = -1;
 
-   if (!(inf = fopen (fname, "r"))) {
+   if ((in_fd = open (fname, O_RDONLY, 0)) < 0) {
       UTIL_LOG ("Failed to open [%s]: %m\n", fname);
       if (errno == EACCES)
          ret = 403;
       goto errorexit;
    }
 
-   while (!feof (inf) && !ferror (inf)) {
-      size_t nbytes = fread (buf, 1, sizeof buf, inf);
-      if ((write (fd, buf, nbytes))==-1) {
-         UTIL_LOG ("Failed to write [%s]: %m\n", fname);
-         goto errorexit;
-      }
+   off_t offs = (off_t)offset;
+   size_t nbytes = count;
+
+   // TODO: This must be done in a loop.
+   if ((sendfile (fd, in_fd, &offs, count)) != nbytes) {
+      UTIL_LOG ("Did not transmit all bytes\n");
+      goto errorexit;
    }
 
    ret = 0;
 
 errorexit:
-   if (inf)
-      fclose (inf);
+   if (in_fd >= 0)
+      close (in_fd);
 
    return ret;
 }
 
 int handler_static_file (int                    fd,
-                          char                  *remote_addr,
-                          uint16_t               remote_port,
-                          enum method_t          method,
-                          enum http_version_t    version,
-                          const char            *resource,
-                          char                 **headers,
-                          char                  *vars)
+                         char                  *remote_addr,
+                         uint16_t               remote_port,
+                         enum method_t          method,
+                         enum http_version_t    version,
+                         const char            *resource,
+                         char                 **headers,
+                         char                  *vars)
 {
+   int statcode = 0;
    remote_addr = remote_addr;
    remote_port = remote_port;
    method = method;
    version = version;
    headers = headers;
 
-   struct stat sb;
-
    header_t *header = header_new ();
    if (!header)
       return 500;
 
-   if ((stat (resource, &sb))!=0) {
-      THRD_LOG (remote_addr, remote_port, "Failed to stat [%s]\n", resource);
-      header_del (header);
-      return 404;
-   }
 
    char slen[25];
-   uint64_t st_size = sb.st_size;
-   sprintf (slen, "%" PRIu64, st_size);
+   uint64_t st_size;
+   if ((statcode = get_filesize (resource, slen, &st_size))!=200) {
+      THRD_LOG (remote_addr, remote_port, "Failed to access file [%s]\n",
+                                          resource);
+      header_del (header);
+      return statcode;
+   }
 
    header_set (header, header_CONTENT_TYPE, "application/octet-stream");
    header_set (header, header_CONTENT_LENGTH, slen);
@@ -87,7 +114,7 @@ int handler_static_file (int                    fd,
 
    UTIL_LOG ("Sending static file\n");
 
-   return sendfile (fd, resource);
+   return local_sendfile (fd, resource, 0, st_size);
 }
 
 int handler_html (int                    fd,
@@ -112,7 +139,7 @@ int handler_html (int                    fd,
    header_write (header, fd);
    header_del (header);
 
-   int ret = sendfile (fd, resource);
+   int ret = local_sendfile (fd, resource, 0, (size_t)-1);
 
 
    return ret;
