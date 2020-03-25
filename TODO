@@ -1,0 +1,11 @@
+ Specifying a directory without the trailing '/' results in a directory index
+being shown. This is not the desired behaviour - the server should realise
+that **even without** the trailing '/' there is a directory involved and
+should invoke the directory handler.
+
+Maybe make this change in the directory handler so that it first stats the
+index.html file (if it exists).
+
+================================
+
+
