@@ -13,7 +13,8 @@
                             enum method_t          method,        \
                             enum http_version_t    version,       \
                             const char            *resource,      \
-                            char                 **headers,       \
+                            char                 **rqst_headers,  \
+                            header_t              *rsp_headers,   \
                             char                  *vars)
 
 #ifdef __cplusplus

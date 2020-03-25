@@ -17,6 +17,7 @@
 #include "resource.h"
 #include "util.h"
 #include "config.h"
+#include "header.h"
 
 static enum method_t get_rqst_method (const char *rqst_line)
 {
@@ -399,15 +400,23 @@ static void *thread_func (void *ta)
    char *rqst_line = NULL;
    size_t rqst_line_len = 0;
 
-   char *headers[MAX_HTTP_HEADERS];
-   size_t header_lens[MAX_HTTP_HEADERS];
+   char *rqst_headers[MAX_HTTP_HEADERS];
+   size_t rqst_header_lens[MAX_HTTP_HEADERS];
+
+   header_t *rsp_headers = NULL;
 
    size_t i;
 
    THRD_LOG (args->remote_addr, args->remote_port, "Received connection\n");
 
-   memset (headers, 0, MAX_HTTP_HEADERS * sizeof headers[0]);
-   memset (header_lens, 0, MAX_HTTP_HEADERS * sizeof header_lens[0]);
+   memset (rqst_headers, 0, MAX_HTTP_HEADERS * sizeof rqst_headers[0]);
+   memset (rqst_header_lens, 0, MAX_HTTP_HEADERS * sizeof rqst_header_lens[0]);
+
+   if (!(rsp_headers = header_new ())) {
+      THRD_LOG (args->remote_addr, args->remote_port,
+                  "Failed to create header object\n");
+      goto errorexit;
+   }
 
    if (!(fd_read_line (args->fd, &rqst_line, &rqst_line_len))) {
       THRD_LOG (args->remote_addr, args->remote_port,
@@ -420,13 +429,13 @@ static void *thread_func (void *ta)
                rqst_line);
 
    for (i=0; i<MAX_HTTP_HEADERS; i++) {
-      if (!(fd_read_line (args->fd, &headers[i], &header_lens[i]))) {
+      if (!(fd_read_line (args->fd, &rqst_headers[i], &rqst_header_lens[i]))) {
          THRD_LOG (args->remote_addr, args->remote_port,
-                   "Unexpected end of headers");
+                   "Unexpected end of rqst_headers");
          status = 400;
          goto errorexit;
       }
-      if (header_lens[i]==0) {
+      if (rqst_header_lens[i]==0) {
          // Reached the empty line, everything after this is the message body
          break;
       }
@@ -434,17 +443,17 @@ static void *thread_func (void *ta)
 
    if (i >= MAX_HTTP_HEADERS) {
       THRD_LOG (args->remote_addr, args->remote_port,
-                "Too many headers sent (%zu), ignoring the rest\n", i);
+                "Too many rqst_headers sent (%zu), ignoring the rest\n", i);
    }
 
 #if 0
-   THRD_LOG (args->remote_addr, args->remote_port, "Collected all headers\n");
+   THRD_LOG (args->remote_addr, args->remote_port, "Collected all rqst_headers\n");
    THRD_LOG (args->remote_addr, args->remote_port,
              "rqst: [%s]\n", rqst_line);
 
-   for (size_t i=0; headers[i]; i++) {
+   for (size_t i=0; rqst_headers[i]; i++) {
       THRD_LOG (args->remote_addr, args->remote_port,
-                "header: [%s]\n", headers[i]);
+                "header: [%s]\n", rqst_headers[i]);
    }
 #endif
 
@@ -475,7 +484,9 @@ static void *thread_func (void *ta)
    resource = (org_resource[0]=='/') ? &org_resource[1] : org_resource;
 
    status = resource_handler (args->fd, args->remote_addr, args->remote_port,
-                              method, version, resource, headers, getvars);
+                              method, version, resource,
+                              rqst_headers, rsp_headers,
+                              getvars);
 
    THRD_LOG (args->remote_addr, args->remote_port, "[%i:%s:%i]\n[%s]\n",
                method, org_resource, version, rqst_line);
@@ -503,7 +514,7 @@ errorexit:
    free (getvars);
 
    for (i=0; i<MAX_HTTP_HEADERS; i++) {
-      free (headers[i]);
+      free (rqst_headers[i]);
    }
 
    shutdown (args->fd, SHUT_RDWR);

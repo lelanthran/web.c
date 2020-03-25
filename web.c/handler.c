@@ -83,7 +83,8 @@ int handler_static_file (int                    fd,
                          enum method_t          method,
                          enum http_version_t    version,
                          const char            *resource,
-                         char                 **headers,
+                         char                 **rqst_headers,
+                         header_t              *rsp_headers,
                          char                  *vars)
 {
    int statcode = 0;
@@ -91,7 +92,7 @@ int handler_static_file (int                    fd,
    remote_port = remote_port;
    method = method;
    version = version;
-   headers = headers;
+   rqst_headers = rqst_headers;
 
    header_t *header = header_new ();
    if (!header)
@@ -127,8 +128,9 @@ int handler_html (int                    fd,
                   enum method_t          method,
                   enum http_version_t    version,
                   const char            *resource,
-                  char                 **headers,
-                  char                 *vars)
+                  char                 **rqst_headers,
+                  header_t              *rsp_headers,
+                  char                  *vars)
 {
    header_t *header = header_new ();
    if (!header)
@@ -155,8 +157,9 @@ int handler_none (int                    fd,
                   enum method_t          method,
                   enum http_version_t    version,
                   const char            *resource,
-                  char                 **headers,
-                  char                 *vars)
+                  char                 **rqst_headers,
+                  header_t              *rsp_headers,
+                  char                  *vars)
 {
    struct stat sb;
    int (*statfunc) (const char *pathname, struct stat *statbuf);
@@ -170,12 +173,17 @@ int handler_none (int                    fd,
 
    if (S_ISREG (sb.st_mode)) {
       return handler_static_file (fd, remote_addr, remote_port, method,
-                                  version, resource, headers, vars);
+                                  version, resource,
+                                  rqst_headers, rsp_headers,
+                                  vars);
    }
 
    if (S_ISDIR (sb.st_mode)) {
       return handler_dir (fd, remote_addr, remote_port, method,
-                          version, resource, headers, vars);
+                          version, resource,
+                          rqst_headers,
+                          rsp_headers,
+                          vars);
    }
 
    return 500;
@@ -187,7 +195,8 @@ int handler_dir (int                    fd,
                  enum method_t          method,
                  enum http_version_t    version,
                  const char            *resource,
-                 char                 **headers,
+                 char                 **rqst_headers,
+                 header_t              *rsp_headers,
                  char                  *vars)
 {
 
@@ -218,13 +227,19 @@ int handler_dir (int                    fd,
 
    if ((stat (index_html, &sb))!=0) {
       int ret = handler_dirlist (fd, remote_addr, remote_port, method, version,
-                                 resource, headers, vars);
+                                 resource,
+                                 rqst_headers,
+                                 rsp_headers,
+                                 vars);
       free (index_html);
       return ret;
    }
 
    int ret =  handler_html (fd, remote_addr, remote_port, method, version,
-                            index_html, headers, vars);
+                            index_html,
+                            rqst_headers,
+                            rsp_headers,
+                            vars);
 
    free (index_html);
 
@@ -237,8 +252,9 @@ int handler_dirlist (int                    fd,
                      enum method_t          method,
                      enum http_version_t    version,
                      const char            *resource,
-                     char                 **headers,
-                     char                 *vars)
+                     char                 **rqst_headers,
+                     header_t              *rsp_headers,
+                     char                  *vars)
 {
    static const char *header =
       "<html>"
