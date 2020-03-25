@@ -57,11 +57,15 @@ static int local_sendfile (int fd, const char *fname, uint64_t offset,
 
    off_t offs = (off_t)offset;
    size_t nbytes = count;
+   ssize_t rc = 0;
 
    // TODO: This must be done in a loop.
-   if ((sendfile (fd, in_fd, &offs, count)) != nbytes) {
-      UTIL_LOG ("Did not transmit all bytes\n");
-      goto errorexit;
+   while ((rc = sendfile (fd, in_fd, &offs, nbytes)) != nbytes) {
+      if (rc == -1) {
+         UTIL_LOG ("Did not transmit all bytes\n");
+         goto errorexit;
+      }
+      nbytes -= rc;
    }
 
    ret = 0;
