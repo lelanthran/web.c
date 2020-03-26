@@ -380,7 +380,7 @@ const char *get_http_rspstr (int status)
          return statuses[i].string;
    }
 
-   return NULL;
+   return "HTTP/1.1 500 Internal Server Error\r\n";
 }
 
 static void *thread_func (void *ta)

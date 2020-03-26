@@ -8,4 +8,4 @@ index.html file (if it exists).
 
 ================================
 
-
+Each handler has to completely perform all output.

@@ -200,7 +200,7 @@ int handler_dir (int                    fd,
    size_t index_html_len = 0;
 
    if (resource[0] == 0) {
-      resource = "www-root";
+      resource = ".";
    }
 
    if ((stat (resource, &sb))!=0) {
@@ -315,7 +315,7 @@ int handler_dirlist (int                    fd,
 
    closedir (dirp);
 
-   return 0;
+   return 200;
 }
 
 
