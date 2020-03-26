@@ -43,7 +43,7 @@
 
 // The default index file to use when the client does a GET on a directory
 // name.
-#define DEFAULT_INDEX_FILE       ("index.html")
+#define DEFAULT_INDEX_FILE       ("/index.html")
 
 
 // The application identifier, and the version string

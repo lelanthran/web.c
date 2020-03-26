@@ -303,6 +303,8 @@ int handler_dirlist (int                    fd,
    write (fd, "<body>", 6);
    write (fd, "<ul>", 4);
    while ((de = readdir (dirp))!=NULL) {
+      if (de->d_name[0] == '.' && de->d_name[1] == 0)
+         continue;
       write (fd, "<li>", 4);
       write (fd, de->d_name, strlen (de->d_name));
       write (fd, "</li>", 5);
