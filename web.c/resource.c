@@ -119,28 +119,28 @@ resource_handler_t *resource_handler_find (const char *resource)
       size_t pattern_len = strlen (g_resources[i]->pattern);
       size_t cmp_len = res_len < pattern_len ? res_len : res_len - pattern_len;
 
-      printf ("Comparing [%s:%s]\n", resource, g_resources[i]->pattern);
-
       switch (g_resources[i]->type) {
 
          case pattern_SUFFIX:
             if ((strncmp (&resource[cmp_len],
                           g_resources[i]->pattern, pattern_len))==0) {
-               printf ("Found suffix: [%s]\n", g_resources[i]->pattern);
+               UTIL_LOG ("Matched suffix: [%s]\n", g_resources[i]->pattern);
                return g_resources[i]->handler;
             }
             break;
 
          case pattern_PREFIX:
-            if ((strncmp (resource, g_resources[i]->pattern, cmp_len))==0) {
-               printf ("Found prefix: [%s]\n", g_resources[i]->pattern);
+            if (pattern_len > res_len)
+               break;
+            if ((strncmp (resource, g_resources[i]->pattern, pattern_len))==0) {
+               UTIL_LOG ("Matched prefix: [%s]\n", g_resources[i]->pattern);
                return g_resources[i]->handler;
             }
             break;
 
          case pattern_EXACT:
             if ((strcmp (resource, g_resources[i]->pattern))==0) {
-               printf ("Found exact: [%s]\n", g_resources[i]->pattern);
+               UTIL_LOG ("Matched exact: [%s]\n", g_resources[i]->pattern);
                return g_resources[i]->handler;
             }
             break;
@@ -148,6 +148,9 @@ resource_handler_t *resource_handler_find (const char *resource)
       }
 
    }
+
+   UTIL_LOG ("No match for [%s]\n", resource);
+
    return handler_static_file;
 }
 

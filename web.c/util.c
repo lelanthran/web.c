@@ -407,8 +407,6 @@ static void *thread_func (void *ta)
 
    size_t i;
 
-   THRD_LOG (args->remote_addr, args->remote_port, "Received connection\n");
-
    memset (rqst_headers, 0, MAX_HTTP_HEADERS * sizeof rqst_headers[0]);
    memset (rqst_header_lens, 0, MAX_HTTP_HEADERS * sizeof rqst_header_lens[0]);
 
@@ -426,7 +424,7 @@ static void *thread_func (void *ta)
    }
 
    THRD_LOG (args->remote_addr, args->remote_port, "REQUEST: [%s]\n",
-               rqst_line);
+             rqst_line);
 
    for (i=0; i<MAX_HTTP_HEADERS; i++) {
       if (!(fd_read_line (args->fd, &rqst_headers[i], &rqst_header_lens[i]))) {
@@ -463,8 +461,6 @@ static void *thread_func (void *ta)
    getvars = get_rqst_getvars (rqst_line);
    resource_handler = resource_handler_find (org_resource);
 
-   THRD_LOG (args->remote_addr, args->remote_port, "vars: [%s]\n", getvars);
-
    if (!method || !org_resource || !version || !resource_handler) {
       THRD_LOG (args->remote_addr, args->remote_port,
                 "Unrecognised method, version or resource [%s]\n",
@@ -488,8 +484,8 @@ static void *thread_func (void *ta)
                               rqst_headers, rsp_headers,
                               getvars);
 
-   THRD_LOG (args->remote_addr, args->remote_port, "%i [%i:%s:%i]\n[%s]\n",
-               status, method, org_resource, version, rqst_line);
+   THRD_LOG (args->remote_addr, args->remote_port, "rqst:%s rsp:%s",
+               rqst_line, get_http_rspstr (status));
 
 errorexit:
 

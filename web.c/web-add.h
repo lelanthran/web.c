@@ -6,7 +6,7 @@
 extern "C" {
 #endif
 
-   int web_main (void);
+   bool web_add_load_handlers (void);
 
 #ifdef __cplusplus
 };

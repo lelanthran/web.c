@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <signal.h>
+#include <inttypes.h>
 
 #include <sys/socket.h>
 #include <unistd.h>
@@ -101,6 +102,11 @@ int main (int argc, char **argv)
       goto errorexit;
    }
 
+   if (!(web_add_load_handlers ())) {
+      UTIL_LOG ("Failed to run the load handlers\n");
+      goto errorexit;
+   }
+
    if (!(resource_global_handler_unlock())) {
       UTIL_LOG ("Failed to release global resource handler lock\n");
       goto errorexit;
@@ -115,21 +121,22 @@ int main (int argc, char **argv)
 
    UTIL_LOG ("Listening on %u q/%i\n", portnum, backlog);
 
-   while (!g_exit_program) {
+   uint8_t errcount = 0;
+   while (!g_exit_program && errcount < 5) {
       free (remote_addr);
       remote_addr = NULL;
       clientfd = accept_conn (listenfd, g_timeout,
                                         &remote_addr,
                                         &remote_port);
       if (clientfd == 0) { // Timeout
+         errcount = 0;
          continue;
       }
       if (clientfd < 0) { // Error
-         UTIL_LOG ("Failed to accept(), aborting\n");
-         goto errorexit;
+         errcount++;
+         UTIL_LOG ("Failed to accept(), errcount=%" PRIu8 "\n", errcount);
+         continue;
       }
-
-      UTIL_LOG ("Got client fd %i\n", clientfd);
 
       if (!(handle_conn (clientfd, remote_addr, remote_port))) {
          UTIL_LOG ("Failed to start response thread for client [%s:%u]\n",
@@ -137,9 +144,15 @@ int main (int argc, char **argv)
          goto errorexit;
       }
       clientfd = -1;
+      errcount = 0;
    }
 
-   ret = web_main ();
+   if (!g_exit_program && errcount) {
+      UTIL_LOG ("Aborting due to excessive error-count %" PRIu8 "\n", errcount);
+      goto errorexit;
+   }
+
+   ret = EXIT_SUCCESS;
 
 errorexit:
 
