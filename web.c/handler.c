@@ -340,14 +340,13 @@ int handler_dirlist (int                    fd,
    static const char *header =
       "<html>"
       "  <body>"
-      "  <table>"
-      "     <tr>"
-      "        <th></th>"
-      "        <th>Name</th>"
-      "     </tr>";
+      " <p style='font-size:large'>Directory index for <b><em>%s</b></em></p>"
+      "  <hr>"
+      "  <table>";
 
    static const char *footer =
       "  </table>"
+      "  <hr>"
       "  <p><em>Powered by " APPLICATION_ID "/" VERSION_STRING "</em>"
       "  </body>"
       "</html>";
@@ -374,7 +373,7 @@ int handler_dirlist (int                    fd,
 
    qsort (dirlist, nrecs, sizeof dirlist[0], cb_strsort);
 
-   dprintf (fd, "%s\n", header);
+   dprintf (fd, header, resource);
 
    size_t reslen = strlen (tmp_resource);
 
