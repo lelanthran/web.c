@@ -427,8 +427,7 @@ static void *thread_func (void *ta)
       goto errorexit;
    }
 
-   THRD_LOG (args->remote_addr, args->remote_port, "REQUEST: [%s]\n",
-             rqst_line);
+   TS_LOG ("[%s:%u] [%s]\n", args->remote_addr, args->remote_port, rqst_line);
 
    for (i=0; i<MAX_HTTP_HEADERS; i++) {
       if (!(fd_read_line (args->fd, &rqst_headers[i], &rqst_header_lens[i]))) {
@@ -488,8 +487,7 @@ static void *thread_func (void *ta)
                               rqst_headers, rsp_headers,
                               getvars);
 
-   THRD_LOG (args->remote_addr, args->remote_port, "rqst:%s rsp:%s",
-               rqst_line, get_http_rspstr (status));
+   TS_LOG ("[%s:%u] =>[%i]\n", args->remote_addr, args->remote_port, status);
 
 errorexit:
 

@@ -130,8 +130,10 @@ resource_handler_t *resource_handler_find (const char *resource)
          case pattern_SUFFIX:
             if ((strncmp (&resource[cmp_len],
                           g_resources[i]->pattern, pattern_len))==0) {
-               UTIL_LOG ("Matched suffix: [%s]: [%s]\n",
-                           g_resources[i]->pattern, g_resources[i]->name);
+               UTIL_LOG ("Matched suffix: [%s]: [%s]=>[%s]\n",
+                          g_resources[i]->pattern,
+                          resource,
+                          g_resources[i]->name);
                return g_resources[i]->handler;
             }
             break;
@@ -140,16 +142,20 @@ resource_handler_t *resource_handler_find (const char *resource)
             if (pattern_len > res_len)
                break;
             if ((strncmp (resource, g_resources[i]->pattern, pattern_len))==0) {
-               UTIL_LOG ("Matched prefix: [%s]: [%s]\n",
-                           g_resources[i]->pattern, g_resources[i]->name);
+               UTIL_LOG ("Matched prefix: [%s]: [%s]=>[%s]\n",
+                          g_resources[i]->pattern,
+                          resource,
+                          g_resources[i]->name);
                return g_resources[i]->handler;
             }
             break;
 
          case pattern_EXACT:
             if ((strcmp (resource, g_resources[i]->pattern))==0) {
-               UTIL_LOG ("Matched exact: [%s]: [%s]\n",
-                           g_resources[i]->pattern, g_resources[i]->name);
+               UTIL_LOG ("Matched exact: [%s]: [%s]=>[%s]\n",
+                          g_resources[i]->pattern,
+                          resource,
+                          g_resources[i]->name);
                return g_resources[i]->handler;
             }
             break;

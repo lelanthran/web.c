@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdarg.h>
+#include <time.h>
 
 #define UTIL_LOG(...)      do {\
       fprintf (stderr, "%s:%d: ", __FILE__, __LINE__);\
@@ -16,6 +17,30 @@
 #define THRD_LOG(addr,port,...)      do {\
       fprintf (stderr, "%s:%d: [%s:%u] ", __FILE__, __LINE__, addr, port);\
       fprintf (stderr, __VA_ARGS__);\
+} while (0)
+
+#define TS_LOG(...)        do {\
+   char template[] = "YYYYMMDDhhmmss";\
+   time_t now = time (NULL);\
+   struct tm *time_fields = localtime (&now);\
+   if (!time_fields) {\
+      UTIL_LOG ("Failed to get local time: %m\n");\
+   } else {\
+      snprintf (template, sizeof template, "%04i"\
+                                           "%02i"\
+                                           "%02i"\
+                                           "%02i"\
+                                           "%02i"\
+                                           "%02i",\
+                                           time_fields->tm_year + 1900,\
+                                           time_fields->tm_mon + 1,\
+                                           time_fields->tm_mday,\
+                                           time_fields->tm_hour,\
+                                           time_fields->tm_min,\
+                                           time_fields->tm_sec);\
+      fprintf (stderr, "%s: ", template);\
+      fprintf (stderr, __VA_ARGS__);\
+   }\
 } while (0)
 
 
