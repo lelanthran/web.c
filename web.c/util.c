@@ -420,7 +420,9 @@ static void *thread_func (void *ta)
       goto errorexit;
    }
 
-   if (!(fd_read_line (args->fd, &rqst_line, &rqst_line_len))) {
+   if (!(fd_read_line (args->fd, &rqst_line, &rqst_line_len)) ||
+       !rqst_line ||
+       !rqst_line_len) {
       THRD_LOG (args->remote_addr, args->remote_port,
                 "Malformed request line: [%s]. Aborting.\n", rqst_line);
       status = 400;

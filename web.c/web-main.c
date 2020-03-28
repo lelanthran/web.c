@@ -163,6 +163,11 @@ int main (int argc, char **argv)
 
    /* ************************************************************** */
 
+   if (!(web_add_init ())) {
+      UTIL_LOG ("Failed to run the user-supplied initialisation\n");
+      goto errorexit;
+   }
+
    if (!(resource_global_handler_lock())) {
       UTIL_LOG ("Failed to aquire global resource handler lock\n");
       goto errorexit;
@@ -197,7 +202,7 @@ int main (int argc, char **argv)
    }
 
    if (!(web_add_load_handlers ())) {
-      UTIL_LOG ("Failed to run the load handlers\n");
+      UTIL_LOG ("Failed to run the user-supplied load-handlers\n");
       goto errorexit;
    }
 

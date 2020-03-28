@@ -35,9 +35,18 @@ static int app_handler (int                    fd,
    return 200;
 }
 
+bool web_add_init (void)
+{
+   /* All the initialisation you want to do on startup must go here. On
+    * success return true. On failure return false.
+    */
+
+   return true;
+}
+
 bool web_add_load_handlers (void)
 {
-   /* All the handlers you want to load should go here. On success retuurn
+   /* All the handlers you want to load must go here. On success return
     * true. On failure return false.
     */
 
