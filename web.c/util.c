@@ -141,6 +141,9 @@ int create_listener (uint32_t portnum, int backlog)
       UTIL_LOG ("socket() failed: %m\n");
       return -1;
    }
+   int enable = 1;
+   if (setsockopt (fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
+      UTIL_LOG ("setsockopt(SO_REUSEADDR) failed, continuing");
 
    if (bind (fd, (struct sockaddr *)&addr, sizeof addr)!=0) {
       UTIL_LOG ("bind() failed: %m\n");

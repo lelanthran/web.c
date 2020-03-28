@@ -262,8 +262,6 @@ char **get_dirlist (const char *addr, uint16_t port, const char *path)
 
    if (!(dirp = opendir (path))) {
       THRD_LOG (addr, port, "Unable to opendir [%s]\n", path);
-      if (errno==EACCES)
-         return NULL;
       return NULL;
    }
 
@@ -283,17 +281,44 @@ char **get_dirlist (const char *addr, uint16_t port, const char *path)
       if ((memcmp (de->d_name, ".", 2))==0)
          continue;
 
-      if (!(ret[idx++] = strdup (de->d_name))) {
+      if (!(ret[idx] = malloc (strlen (de->d_name) + 2))) {
          for (size_t i=0; ret[i]; i++)
             free (ret[i]);
          free (ret);
          closedir (dirp);
          return NULL;
       }
+
+      struct stat sb;
+      char *tmp = malloc (strlen (path) + '/' + strlen (de->d_name) + 1);
+      if (!tmp) {
+         free (ret);
+         closedir (dirp);
+         return NULL;
+      }
+      strcpy (tmp, path);
+      strcat (tmp, "/");
+      strcat (tmp, de->d_name);
+      memset (&sb, 0, sizeof sb);
+      stat (tmp, &sb);
+      free (tmp);
+
+      strcpy (ret[idx], de->d_name);
+      if (S_ISDIR (sb.st_mode)) {
+         strcat (ret[idx], "/");
+      }
+      idx++;
    }
 
    closedir (dirp);
    return ret;
+}
+
+static int cb_strsort (const void *lhs, const void *rhs)
+{
+   const char * const *slhs = lhs,
+              * const *srhs = rhs;
+   return strcmp (*slhs, *srhs);
 }
 
 int handler_dirlist (int                    fd,
@@ -319,14 +344,11 @@ int handler_dirlist (int                    fd,
       "     <tr>"
       "        <th></th>"
       "        <th>Name</th>"
-      "        <th>Last Modified</th>"
-      "        <th>Size</th>"
-      "        <th>Description</th>"
       "     </tr>";
 
    static const char *footer =
       "  </table>"
-      "  <p>Powered by <em>" APPLICATION_ID "/" VERSION_STRING "</em>"
+      "  <p><em>Powered by " APPLICATION_ID "/" VERSION_STRING "</em>"
       "  </body>"
       "</html>";
 
@@ -334,13 +356,14 @@ int handler_dirlist (int                    fd,
    size_t rowlen = 0;
 
    char **dirlist = get_dirlist (remote_addr, remote_port, resource);
+   char *tmp_resource = strdup (resource);
 
    const char *rsp = get_http_rspstr (200);
    write (fd, rsp, strlen (rsp));
 
    write (fd, "Content-type: text/html\r\n\r\n", 27);
 
-   if (!dirlist) {
+   if (!dirlist || !tmp_resource) {
       dprintf (fd, "Unrecoverable error\n");
       return 500;
    }
@@ -349,23 +372,64 @@ int handler_dirlist (int                    fd,
    for (size_t i=0; dirlist[i]; i++)
       nrecs++;
 
-   qsort (dirlist, nrecs, sizeof **dirlist,
-                   (int (*) (const void *, const void *))strcmp);
+   qsort (dirlist, nrecs, sizeof dirlist[0], cb_strsort);
 
    dprintf (fd, "%s\n", header);
 
+   size_t reslen = strlen (tmp_resource);
+
+   if (tmp_resource[reslen-1] == '/')
+      tmp_resource[reslen-1] = 0;
+
    for (size_t i=0; dirlist[i]; i++) {
-      bool rc = util_sprintf (&row, &rowlen, "<tr><td>%s</td></tr>\n",
-                                             dirlist[i]);
+      bool rc;
+      if ((memcmp (dirlist[i], "..", 3))==0) {
+         char *parent = strdup (tmp_resource);
+         if (!parent) {
+            THRD_LOG (remote_addr, remote_port, "OOM error [%s]\n", dirlist[i]);
+            free (tmp_resource);
+            return 500;
+         }
+         char *term = strrchr (parent, '/');
+         if (term)
+            *term = 0;
+         else
+            *parent = 0;
+
+         if (!*parent) {
+            parent[0] = '/';
+            parent[1] = 0;
+         }
+
+         const char *fmts = "<tr><td><a href='%s'>%s</a></td></tr>\n";
+         if (!(strchr (parent, '/')))
+            fmts = "<tr><td><a href='/%s/'>%s</a></td></tr>\n";
+
+         rc = util_sprintf (&row, &rowlen, fmts,
+                                 parent,
+                                 dirlist[i]);
+         free (parent);
+      } else {
+         rc = util_sprintf (&row, &rowlen, "<tr><td>"
+                                 "<a href='/%s/%s'>%s</a>"
+                                 "</td></tr>\n",
+                                 tmp_resource,
+                                 dirlist[i],
+                                 dirlist[i]);
+      }
+
       dprintf (fd, "%s", row); // Will get printed twice in case of error.
       free (row);
       row = NULL;
       if (!rc) {
          THRD_LOG (remote_addr, remote_port, "OOM error [%s]\n", dirlist[i]);
+         free (tmp_resource);
          return 500;
       }
    }
    dprintf (fd, "%s\n", footer);
+
+   free (tmp_resource);
 
    for (size_t i=0; dirlist[i]; i++) {
       free (dirlist[i]);
@@ -374,5 +438,4 @@ int handler_dirlist (int                    fd,
 
    return 200;
 }
-
 
