@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdarg.h>
 
 #define UTIL_LOG(...)      do {\
       fprintf (stderr, "%s:%d: ", __FILE__, __LINE__);\
@@ -46,6 +47,21 @@ enum http_version_t {
 extern "C" {
 #endif
 
+   /* ******************************************************************* *
+    * Utility functions for callers to use
+    */
+
+   // Print the formatted string into dst, which the caller must free. If
+   // dst_len is not NULL it is populated with the length of the resulting
+   // string.
+   bool util_sprintf (char **dst, size_t *dst_len, const char *fmts, ...);
+   bool util_vsprintf (char **dst, size_t *dst_len, const char *fmts, va_list ap);
+
+   /* ******************************************************************* *
+    * Functions used by the web-server itself. Having them in the .so file
+    * reduces the memory load when multiple instances of the web server is
+    * running.
+    */
    int create_listener (uint32_t portnum, int backlog);
 
    int accept_conn (int listenfd, size_t timeout,

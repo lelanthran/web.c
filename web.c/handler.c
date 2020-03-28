@@ -254,6 +254,48 @@ int handler_dir (int                    fd,
    return ret;
 }
 
+char **get_dirlist (const char *addr, uint16_t port, const char *path)
+{
+   DIR *dirp = NULL;
+   struct dirent *de = NULL;
+   size_t nrecs = 0;
+
+   if (!(dirp = opendir (path))) {
+      THRD_LOG (addr, port, "Unable to opendir [%s]\n", path);
+      if (errno==EACCES)
+         return NULL;
+      return NULL;
+   }
+
+   while ((de = readdir (dirp)))
+      nrecs++;
+
+   rewinddir (dirp);
+
+   char **ret = calloc (nrecs + 1, sizeof *ret);
+   if (!ret) {
+      closedir (dirp);
+      return NULL;
+   }
+
+   size_t idx = 0;
+   while ((de = readdir (dirp))) {
+      if ((memcmp (de->d_name, ".", 2))==0)
+         continue;
+
+      if (!(ret[idx++] = strdup (de->d_name))) {
+         for (size_t i=0; ret[i]; i++)
+            free (ret[i]);
+         free (ret);
+         closedir (dirp);
+         return NULL;
+      }
+   }
+
+   closedir (dirp);
+   return ret;
+}
+
 int handler_dirlist (int                    fd,
                      char                  *remote_addr,
                      uint16_t               remote_port,
@@ -269,7 +311,7 @@ int handler_dirlist (int                    fd,
    (void) rqst_headers;
    (void) rsp_headers;
    (void) vars;
-#if 0
+
    static const char *header =
       "<html>"
       "  <body>"
@@ -282,54 +324,53 @@ int handler_dirlist (int                    fd,
       "        <th>Description</th>"
       "     </tr>";
 
-   static const char *row =
-      "<tr>"
-      "  <td></td>"
-      "  <td></td>"
-      "  <td></td>"
-      "  <td></td>"
-      "  <td></td>"
-      "</tr>";
-
    static const char *footer =
       "  </table>"
       "  <p>Powered by <em>" APPLICATION_ID "/" VERSION_STRING "</em>"
       "  </body>"
       "</html>";
-#endif
 
-   DIR *dirp = NULL;
-   struct dirent *de = NULL;
+   char *row = NULL;
+   size_t rowlen = 0;
 
-   if (!(dirp = opendir (resource))) {
-      THRD_LOG (remote_addr, remote_port, "Unable to opendir [%s]\n", resource);
-      if (errno==EACCES)
-         return 403;
-      return 500;
-   }
+   char **dirlist = get_dirlist (remote_addr, remote_port, resource);
 
    const char *rsp = get_http_rspstr (200);
    write (fd, rsp, strlen (rsp));
 
    write (fd, "Content-type: text/html\r\n\r\n", 27);
 
-   write (fd, "<html>", 6);
-   write (fd, "<body>", 6);
-   write (fd, "<ul>", 4);
-   while ((de = readdir (dirp))!=NULL) {
-      if (de->d_name[0] == '.' && de->d_name[1] == 0)
-         continue;
-      write (fd, "<li>", 4);
-      write (fd, de->d_name, strlen (de->d_name));
-      write (fd, "</li>", 5);
+   if (!dirlist) {
+      dprintf (fd, "Unrecoverable error\n");
+      return 500;
    }
-   write (fd, "</ul>", 5);
-   write (fd, "</body>", 7);
-   write (fd, "</html>", 7);
 
-   // header_write (header, fd);
+   size_t nrecs = 0;
+   for (size_t i=0; dirlist[i]; i++)
+      nrecs++;
 
-   closedir (dirp);
+   qsort (dirlist, nrecs, sizeof **dirlist,
+                   (int (*) (const void *, const void *))strcmp);
+
+   dprintf (fd, "%s\n", header);
+
+   for (size_t i=0; dirlist[i]; i++) {
+      bool rc = util_sprintf (&row, &rowlen, "<tr><td>%s</td></tr>\n",
+                                             dirlist[i]);
+      dprintf (fd, "%s", row); // Will get printed twice in case of error.
+      free (row);
+      row = NULL;
+      if (!rc) {
+         THRD_LOG (remote_addr, remote_port, "OOM error [%s]\n", dirlist[i]);
+         return 500;
+      }
+   }
+   dprintf (fd, "%s\n", footer);
+
+   for (size_t i=0; dirlist[i]; i++) {
+      free (dirlist[i]);
+   }
+   free (dirlist);
 
    return 200;
 }

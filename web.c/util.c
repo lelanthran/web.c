@@ -1,6 +1,7 @@
 
 #include <string.h>
 #include <stddef.h>
+#include <stdarg.h>
 
 
 #include <sys/types.h>
@@ -555,5 +556,44 @@ errorexit:
       thread_args_del (args);
    }
    return !error;
+}
+
+
+bool util_vsprintf (char **dst, size_t *dst_len, const char *fmts, va_list ap)
+{
+   va_list ac;
+
+   va_copy (ac, ap);
+
+   int nbytes = vsnprintf (NULL, 0, fmts, ac);
+
+   va_end (ac);
+
+   if (nbytes <= 0)
+      return false;
+
+   char *tmp = malloc (nbytes + 1);
+   if (!tmp)
+      return false;
+
+   if ((vsnprintf (tmp, nbytes+1, fmts, ap))!=nbytes) {
+      free (tmp);
+      return false;
+   }
+
+   *dst = tmp;
+   if (dst_len)
+      *dst_len = nbytes;
+
+   return true;
+}
+
+bool util_sprintf (char **dst, size_t *dst_len, const char *fmts, ...)
+{
+   va_list ap;
+   va_start (ap, fmts);
+   bool ret = util_vsprintf (dst, dst_len, fmts, ap);
+   va_end (ap);
+   return ret;
 }
 
