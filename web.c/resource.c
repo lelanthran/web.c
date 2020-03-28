@@ -8,6 +8,7 @@
 /* *************************************************************** */
 
 struct res_rec_t {
+   char                 *name;
    char                 *pattern;
    enum pattern_type_t   type;
    resource_handler_t   *handler;
@@ -17,11 +18,13 @@ static void res_rec_del (struct res_rec_t *rec)
 {
    if (rec) {
       free (rec->pattern);
+      free (rec->name);
       free (rec);
    }
 }
 
-static struct res_rec_t *res_rec_new (const char *pattern,
+static struct res_rec_t *res_rec_new (const char *name,
+                                      const char *pattern,
                                       enum pattern_type_t type,
                                       resource_handler_t *handler)
 {
@@ -29,8 +32,10 @@ static struct res_rec_t *res_rec_new (const char *pattern,
    if (!ret)
       return NULL;
 
-   if (!(ret->pattern = strdup (pattern))) {
-      free (ret);
+   ret->pattern = strdup (pattern);
+   ret->name = strdup (name);
+   if (!ret->pattern || !ret->name) {
+      res_rec_del (ret);
       return NULL;
    }
 
@@ -79,11 +84,12 @@ bool resource_global_handler_unlock (void)
 
 /* *************************************************************** */
 
-bool resource_global_handler_add (const char *pattern,
+bool resource_global_handler_add (const char *name,
+                                  const char *pattern,
                                   enum pattern_type_t type,
                                   resource_handler_t *handler)
 {
-   struct res_rec_t *rec = res_rec_new (pattern, type, handler);
+   struct res_rec_t *rec = res_rec_new (name, pattern, type, handler);
    if (!rec)
       return false;
 
@@ -124,7 +130,8 @@ resource_handler_t *resource_handler_find (const char *resource)
          case pattern_SUFFIX:
             if ((strncmp (&resource[cmp_len],
                           g_resources[i]->pattern, pattern_len))==0) {
-               UTIL_LOG ("Matched suffix: [%s]\n", g_resources[i]->pattern);
+               UTIL_LOG ("Matched suffix: [%s]: [%s]\n",
+                           g_resources[i]->pattern, g_resources[i]->name);
                return g_resources[i]->handler;
             }
             break;
@@ -133,14 +140,16 @@ resource_handler_t *resource_handler_find (const char *resource)
             if (pattern_len > res_len)
                break;
             if ((strncmp (resource, g_resources[i]->pattern, pattern_len))==0) {
-               UTIL_LOG ("Matched prefix: [%s]\n", g_resources[i]->pattern);
+               UTIL_LOG ("Matched prefix: [%s]: [%s]\n",
+                           g_resources[i]->pattern, g_resources[i]->name);
                return g_resources[i]->handler;
             }
             break;
 
          case pattern_EXACT:
             if ((strcmp (resource, g_resources[i]->pattern))==0) {
-               UTIL_LOG ("Matched exact: [%s]\n", g_resources[i]->pattern);
+               UTIL_LOG ("Matched exact: [%s]: [%s]\n",
+                           g_resources[i]->pattern, g_resources[i]->name);
                return g_resources[i]->handler;
             }
             break;
@@ -149,8 +158,7 @@ resource_handler_t *resource_handler_find (const char *resource)
 
    }
 
-   UTIL_LOG ("No match for [%s]\n", resource);
-
+   UTIL_LOG ("No match for [%s], using handler_static_file()\n", resource);
    return handler_static_file;
 }
 

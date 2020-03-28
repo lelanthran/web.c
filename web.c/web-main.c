@@ -46,7 +46,6 @@ int main (int argc, char **argv)
     */
    const char *opt_portnum = read_cline_opt (argc, argv, "port");
    const char *opt_logfile = read_cline_opt (argc, argv, "logfile");
-   const char *opt_daemon  = read_cline_opt (argc, argv, "daemon");
    const char *opt_backlog = read_cline_opt (argc, argv, "backlog");
 
    bool opt_unknown = false;
@@ -165,25 +164,29 @@ int main (int argc, char **argv)
       goto errorexit;
    }
 
-   if (!(resource_global_handler_add (EXTENSION_NONE, pattern_SUFFIX,
+   if (!(resource_global_handler_add ("handler_none",
+                                      EXTENSION_NONE, pattern_SUFFIX,
                                       handler_none))) {
       UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_NONE);
       goto errorexit;
    }
 
-   if (!(resource_global_handler_add (EXTENSION_DIR, pattern_SUFFIX,
+   if (!(resource_global_handler_add ("handler_none",
+                                      EXTENSION_DIR, pattern_SUFFIX,
                                       handler_dir))) {
       UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_DIR);
       goto errorexit;
    }
 
-   if (!(resource_global_handler_add (EXTENSION_TEXT, pattern_SUFFIX,
+   if (!(resource_global_handler_add ("handler_none",
+                                      EXTENSION_TEXT, pattern_SUFFIX,
                                       handler_static_file))) {
       UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_TEXT);
       goto errorexit;
    }
 
-   if (!(resource_global_handler_add (EXTENSION_HTML, pattern_SUFFIX,
+   if (!(resource_global_handler_add ("handler_none",
+                                      EXTENSION_HTML, pattern_SUFFIX,
                                       handler_html))) {
       UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_HTML);
       goto errorexit;

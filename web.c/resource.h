@@ -31,7 +31,8 @@ extern "C" {
    // Before _add() is called the _lock() function must be called. After all
    // the _add() calls the caller must call the _unlock() function.
    bool resource_global_handler_lock (void);
-   bool resource_global_handler_add (const char *pattern,
+   bool resource_global_handler_add (const char *name,
+                                     const char *pattern,
                                      enum pattern_type_t type,
                                      resource_handler_t *handler);
    bool resource_global_handler_unlock (void);

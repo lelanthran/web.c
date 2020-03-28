@@ -42,7 +42,7 @@ bool web_add_load_handlers (void)
     * true. On failure return false.
     */
 
-   if (!(resource_global_handler_add ("/myapp", pattern_PREFIX,
+   if (!(resource_global_handler_add ("app_handler", "/myapp", pattern_PREFIX,
                                       app_handler))) {
       UTIL_LOG ("Failed to add handler [%s]\n", "/myapp");
       return false;
