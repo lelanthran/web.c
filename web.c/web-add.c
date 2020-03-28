@@ -19,16 +19,15 @@ static int app_handler (int                    fd,
                         header_t              *rsp_headers,
                         char                  *vars)
 {
+   (void)remote_addr;
+   (void)remote_port;
+   (void)method;
+   (void)version;
+   (void)rqst_headers;
+
    header_set (rsp_headers, header_CONTENT_TYPE, "text/html");
    write (fd, get_http_rspstr (200), strlen (get_http_rspstr (200)));
    header_write (rsp_headers, fd);
-
-   const char *output =
-      "<html>\n"
-      "  <body>\n"
-      "     <h1>Hello World</h1>\n"
-      "  </body>\n"
-      "</html>\n";
 
    dprintf (fd, "<html>\n\t<body>\n\t\t<pre>%s\n%s</pre>\n\t</body>\n</html>\n",
                 resource, vars);

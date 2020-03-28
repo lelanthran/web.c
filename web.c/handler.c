@@ -47,6 +47,9 @@ static int local_sendfile (int fd, const char *fname, uint64_t offset,
    int ret = 500;
 
    int in_fd = -1;
+   off_t offs = (off_t)offset;
+   size_t nbytes = count;
+   ssize_t rc = 0;
 
    if ((in_fd = open (fname, O_RDONLY, 0)) < 0) {
       UTIL_LOG ("Failed to open [%s]: %m\n", fname);
@@ -55,12 +58,8 @@ static int local_sendfile (int fd, const char *fname, uint64_t offset,
       goto errorexit;
    }
 
-   off_t offs = (off_t)offset;
-   size_t nbytes = count;
-   ssize_t rc = 0;
-
    // TODO: This must be done in a loop.
-   while ((rc = sendfile (fd, in_fd, &offs, nbytes)) != nbytes) {
+   while ((rc = sendfile (fd, in_fd, &offs, nbytes)) != (ssize_t)nbytes) {
       if (rc == -1) {
          UTIL_LOG ("Did not transmit all bytes\n");
          goto errorexit;
@@ -87,6 +86,8 @@ int handler_static_file (int                    fd,
                          header_t              *rsp_headers,
                          char                  *vars)
 {
+   (void) vars;
+
    int statcode = 0;
    remote_addr = remote_addr;
    remote_port = remote_port;
@@ -125,6 +126,13 @@ int handler_html (int                    fd,
                   header_t              *rsp_headers,
                   char                  *vars)
 {
+   (void) method;
+   (void) version;
+   (void) resource;
+   (void) rqst_headers;
+   (void) rsp_headers;
+   (void) vars;
+
    UTIL_LOG ("Sending html page\n");
 
    char slen[25];
@@ -256,6 +264,12 @@ int handler_dirlist (int                    fd,
                      header_t              *rsp_headers,
                      char                  *vars)
 {
+   (void) method;
+   (void) version;
+   (void) rqst_headers;
+   (void) rsp_headers;
+   (void) vars;
+#if 0
    static const char *header =
       "<html>"
       "  <body>"
@@ -282,8 +296,8 @@ int handler_dirlist (int                    fd,
       "  <p>Powered by <em>" APPLICATION_ID "/" VERSION_STRING "</em>"
       "  </body>"
       "</html>";
+#endif
 
-   struct stat sb;
    DIR *dirp = NULL;
    struct dirent *de = NULL;
 

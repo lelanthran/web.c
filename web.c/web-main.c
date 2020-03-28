@@ -36,6 +36,7 @@ int main (int argc, char **argv)
    uint32_t portnum = 0;
    int backlog = 0;
    int listenfd = -1;
+   uint8_t errcount = 0;
 
    int clientfd = -1;
    char *remote_addr = NULL;
@@ -73,6 +74,11 @@ int main (int argc, char **argv)
    if (!opt_logfile) {
       UTIL_LOG ("No logfile specified, logging to stderr\n");
    } else {
+      int fd_logfile = -1;
+      static const char *template = ".YYYYMMDDhhmmss";
+      size_t logfile_namelen = 0;
+      int fd_stderr = -1;
+
       time_t now = time (NULL);
       struct tm *time_fields = localtime (&now);
       if (!time_fields) {
@@ -80,10 +86,9 @@ int main (int argc, char **argv)
          goto errorexit;
       }
 
-      static const char *template = ".YYYYMMDDhhmmss";
-      size_t logfile_namelen = strlen (opt_logfile)
-                             + strlen (template)
-                             + 1;
+      logfile_namelen = strlen (opt_logfile)
+                      + strlen (template)
+                      + 1;
       if (!(logfile_name = malloc (logfile_namelen))) {
          UTIL_LOG ("OOM error constructing logfile name\n");
          goto errorexit;
@@ -103,14 +108,13 @@ int main (int argc, char **argv)
                                                time_fields->tm_min,
                                                time_fields->tm_sec);
 
-      int fd_logfile = open (logfile_name,
-                             O_WRONLY | O_CREAT,
-                             S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+      fd_logfile = open (logfile_name,
+                         O_WRONLY | O_CREAT,
+                         S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
       if (fd_logfile < 0) {
          UTIL_LOG ("Cannot open logfile [%s]\n", logfile_name);
          goto errorexit;
       }
-      int fd_stderr = -1;
       if ((fd_stderr = fileno (stderr)) < 0) {
          UTIL_LOG ("Unable to get file descriptors for stderr\n");
          close (fd_logfile);
@@ -211,7 +215,7 @@ int main (int argc, char **argv)
 
    UTIL_LOG ("Listening on %u q/%i\n", portnum, backlog);
 
-   uint8_t errcount = 0;
+   errcount = 0;
    while (!g_exit_program && errcount < 5) {
       free (remote_addr);
       remote_addr = NULL;
