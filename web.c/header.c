@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include "header.h"
+#include "util.h"
 
 struct header_t {
    char **fields;
@@ -199,6 +200,27 @@ bool header_write (header_t *header, int fd)
       return false;
 
    return true;
+}
+
+
+const char *headerlist_find (char **headers, enum header_name_t name)
+{
+   const char *str_name = find_namestring (name);
+   if (!str_name)
+      return NULL;
+
+   size_t str_len = strlen (str_name);
+
+   for (size_t i=0; headers[i]; i++) {
+      if ((strnicmp (headers[i], str_name, str_len))==0) {
+         const char *ret = strchr (headers[i], ':');
+         if (ret)
+            return &ret[1];
+         return "";
+      }
+   }
+
+   return "";
 }
 
 

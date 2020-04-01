@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stddef.h>
 #include <stdarg.h>
+#include <ctype.h>
 
 
 #include <sys/types.h>
@@ -95,6 +96,11 @@ static char *get_rqst_resource (const char *rqst_line)
    strncpy (ret, start, len);
    ret[len] = 0;
    return ret;
+}
+
+static char *parse_urlencoded_string (const char *string, size_t len)
+{
+   return NULL;
 }
 
 static char *get_rqst_getvars (const char *rqst_line)
@@ -484,6 +490,26 @@ static void *thread_func (void *ta)
 
    resource = (org_resource[0]=='/') ? &org_resource[1] : org_resource;
 
+   /* Check if request is a POSTed form data (either multipart/form-data or
+    * application/x-www-form-urlencoded), and if it is we grab the individual
+    * parts of the body as form data or we parse the body as urlencoded,
+    * respectively).
+    */
+   const char *content_type = headerlist_find (rqst_headers,
+                                               header_CONTENT_TYPE);
+   if (content_type && method == method_POST) {
+      // Must see if other methods can send forms
+      static const char *mform_data = "multipart/form-data",
+                        *awww_form = "application/x-www-form-urlencoded";
+
+      if ((strnicmp (content_type, mform_data, strlen (mform_data)))==0) {
+
+      }
+
+      if ((strnicmp (content_type, awww_form, strlen (awww_form)))==0) {
+
+      }
+   }
    status = resource_handler (args->fd, args->remote_addr, args->remote_port,
                               method, version, resource,
                               rqst_headers, rsp_headers,
@@ -599,4 +625,29 @@ bool util_sprintf (char **dst, size_t *dst_len, const char *fmts, ...)
    va_end (ap);
    return ret;
 }
+
+#if 1
+// These two must be commented out if your linker fails with "multiple
+// references" errors. Don't forget to comment them out in the util.h header
+// as well.
+int stricmp (const char *s1, const char *s2)
+{
+   while (*s1 && *s2) {
+      int result = toupper (*s1++) - toupper (*s2++);
+      if (result)
+         return result;
+   }
+   return *s1 - *s2;
+}
+
+int strnicmp (const char *s1, const char *s2, size_t n)
+{
+   while (*s1 && *s2 && n--) {
+      int result = toupper (*s1++) - toupper (*s2++);
+      if (result)
+         return result;
+   }
+   return *s1 - *s2;
+}
+#endif
 

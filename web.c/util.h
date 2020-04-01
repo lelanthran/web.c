@@ -82,6 +82,15 @@ extern "C" {
    bool util_sprintf (char **dst, size_t *dst_len, const char *fmts, ...);
    bool util_vsprintf (char **dst, size_t *dst_len, const char *fmts, va_list ap);
 
+#if 1
+   // These two must be commented out if your linker fails with "multiple
+   // references" errors. Don't forget to comment them out in the util.c
+   // implementation as well.
+   int stricmp (const char *s1, const char *s2);
+   int strnicmp (const char *s1, const char *s2, size_t n);
+#endif
+
+
    /* ******************************************************************* *
     * Functions used by the web-server itself. Having them in the .so file
     * reduces the memory load when multiple instances of the web server is
@@ -96,6 +105,7 @@ extern "C" {
    bool handle_conn (int fd, char *remote_addr, uint16_t remote_port);
 
    const char *get_http_rspstr (int status);
+
 
 #ifdef __cplusplus
 };

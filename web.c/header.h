@@ -82,6 +82,8 @@ extern "C" {
 
    bool header_write (header_t *header, int fd);
 
+   const char *headerlist_find (char **headers, enum header_name_t);
+
 
 #ifdef __cplusplus
 };
