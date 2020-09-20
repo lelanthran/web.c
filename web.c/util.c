@@ -100,6 +100,9 @@ static char *get_rqst_resource (const char *rqst_line)
 
 static char *parse_urlencoded_string (const char *string, size_t len)
 {
+#warning TODO: Implement encoder/decoder for url strings
+   (void)string;
+   (void)len;
    return NULL;
 }
 
@@ -175,11 +178,13 @@ int accept_conn (int listenfd, size_t timeout,
 
    memset (&ret, 0xff, sizeof ret);
 
-   fd_set fds;
+   fd_set fds[3]; // Read/write/except
    struct timeval tv = { (long int)timeout , 0 };
-   FD_ZERO (&fds);
-   FD_SET (listenfd, &fds);
-   int r = select (listenfd + 1, &fds, &fds, &fds, &tv);
+   for (size_t i=0; i<sizeof fds/sizeof fds[0]; i++) {
+      FD_ZERO (&fds[i]);
+      FD_SET (listenfd, &fds[i]);
+   }
+   int r = select (listenfd + 1, &fds[0], &fds[1], &fds[2], &tv);
    if (r == 0) {
       return 0;
    }
@@ -404,6 +409,7 @@ static void *thread_func (void *ta)
    char *org_resource = NULL;
    char *resource = NULL;
    char *getvars = NULL;
+   const char *content_type = NULL;
    enum http_version_t version = 0;
    resource_handler_t *resource_handler = NULL;
 
@@ -495,7 +501,7 @@ static void *thread_func (void *ta)
     * parts of the body as form data or we parse the body as urlencoded,
     * respectively).
     */
-   const char *content_type = headerlist_find (rqst_headers,
+   content_type = headerlist_find (rqst_headers,
                                                header_CONTENT_TYPE);
    if (content_type && method == method_POST) {
       // Must see if other methods can send forms
