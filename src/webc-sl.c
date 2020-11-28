@@ -1,3 +1,11 @@
+/* ***************************************************************************
+ * A daemon that will provide all the services that a client could ever want,
+ * including:
+ * 1. Client/user access control via group management.
+ * 2. Calling of stored procedures on the database.
+ * 3. File upload, download and modification.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,19 +21,37 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-
-#include "web-main.h"
 #include "web-add.h"
 #include "util.h"
-#include "config.h"
 #include "resource.h"
 #include "handler.h"
+
+#include "ds_str.h"
 
 static volatile sig_atomic_t g_exit_program = 0;
 static size_t g_timeout = TIMEOUT_TO_SHUTDOWN;
 
+static void print_help_msg (const char *option)
+{
+   static const struct {
+      const char *option;
+      const char *msg;
+   } msgs[] = {
+#define HELP(x,y)    { x, y ,
+   HELP ("help", "Display this screen"),
+#undef HELP
+   };
+   for (size_t i=0; i<sizeof msgs/sizeof msgs[0]; i++) {
+      if (option && (strcmp (option, msgs[i].option))==0) {
+         printf (msgs[i].msg);
+         return;
+      }
+      printf (msgs[i].msg0);
+   }
+}
+
 static void signal_handler (int n);
-static const char *read_cline_opt (int argc, char **argv, const char *name);
+static const char *load_all_cline_opts (int argc, char **argv)
 
 int main (int argc, char **argv)
 {
@@ -45,9 +71,7 @@ int main (int argc, char **argv)
    /* *************************************************************
     *  Handle the command line arguments
     */
-   const char *opt_portnum = read_cline_opt (argc, argv, "port");
-   const char *opt_logfile = read_cline_opt (argc, argv, "logfile");
-   const char *opt_backlog = read_cline_opt (argc, argv, "backlog");
+   load_all_cline_opts (argc, argv);
 
    bool opt_unknown = false;
    for (size_t i=1; argv[i]; i++) {
@@ -56,6 +80,11 @@ int main (int argc, char **argv)
          opt_unknown = true;
       }
    }
+
+   if (opt_help) {
+      print_help_msg (NULL);
+   }
+
    if (opt_unknown) {
       UTIL_LOG ("Aborting\n");
       return EXIT_FAILURE;
@@ -280,22 +309,24 @@ static void signal_handler (int n)
    }
 }
 
-static const char *read_cline_opt (int argc, char **argv, const char *name)
+static void load_all_cline_opts (int argc, char **argv)
 {
    (void)argc;
-   size_t namelen = strlen (name);
 
    for (size_t i=1; argv[i]; i++) {
       if ((memcmp (argv[i], "--", 2))!=0)
          continue;
 
-      if ((strncmp (&argv[i][2], name, namelen))==0) {
-         char *value = &argv[i][2+namelen];
-         if (*value == '=')
-            value++;
-         argv[i][0] = 0;
-         return value;
-      }
+      char *value = &argv[i][2+namelen];
+      if (*value == '=')
+         *value++  = 0;
+
+      char *tmp = ds_str
+      setenv (argv[i], value, 1);
+
+      argv[i][0] = 0;
+      return value;
    }
    return NULL;
 }
+
