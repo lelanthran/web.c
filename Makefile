@@ -10,7 +10,7 @@
 # Each executable will only use its own library. After the three-number tuple
 # in the form of X.Y.Z, you can add any suffixes. In this example I use "-rc1"
 # to denote "release candidate 1".
-VERSION=0.0.1-rc
+VERSION=v1.0.2
 
 # ###############################################################
 
