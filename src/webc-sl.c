@@ -6,6 +6,7 @@
  * 3. File upload, download and modification.
  */
 
+#define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -23,6 +24,7 @@
 
 #include "web-add.h"
 #include "util.h"
+#include "config.h"
 #include "resource.h"
 #include "handler.h"
 
@@ -37,21 +39,21 @@ static void print_help_msg (const char *option)
       const char *option;
       const char *msg;
    } msgs[] = {
-#define HELP(x,y)    { x, y ,
+#define HELP(x,y)    { x, y }
    HELP ("help", "Display this screen"),
 #undef HELP
    };
    for (size_t i=0; i<sizeof msgs/sizeof msgs[0]; i++) {
       if (option && (strcmp (option, msgs[i].option))==0) {
-         printf (msgs[i].msg);
+         printf ("%s\n", msgs[i].msg);
          return;
       }
-      printf (msgs[i].msg0);
+      printf ("%s\n", msgs[i].msg);
    }
 }
 
 static void signal_handler (int n);
-static const char *load_all_cline_opts (int argc, char **argv)
+static int load_all_cline_opts (int argc, char **argv);
 
 int main (int argc, char **argv)
 {
@@ -59,7 +61,7 @@ int main (int argc, char **argv)
 
    char *logfile_name = NULL;
 
-   uint32_t portnum = 0;
+   uint32_t listen_port = 0;
    int backlog = 0;
    int listenfd = -1;
    uint8_t errcount = 0;
@@ -72,6 +74,8 @@ int main (int argc, char **argv)
     *  Handle the command line arguments
     */
    load_all_cline_opts (argc, argv);
+   if ((getenv ("webc_help"))!=NULL)
+      print_help_msg (NULL);
 
    bool opt_unknown = false;
    for (size_t i=1; argv[i]; i++) {
@@ -81,26 +85,22 @@ int main (int argc, char **argv)
       }
    }
 
-   if (opt_help) {
-      print_help_msg (NULL);
-   }
-
    if (opt_unknown) {
       UTIL_LOG ("Aborting\n");
       return EXIT_FAILURE;
    }
 
-   if (!opt_portnum) {
-      opt_portnum = DEFAULT_LISTEN_PORT;
-      UTIL_LOG ("No port number specified, using default [%s]\n", opt_portnum);
+   if (!(getenv ("webc_listen-port"))) {
+      setenv ("webc_listen-port", DEFAULT_LISTEN_PORT, 1);
+      UTIL_LOG ("No port number specified, using default [%s]\n", DEFAULT_LISTEN_PORT);
    }
 
-   if (!opt_backlog) {
-      opt_backlog = DEFAULT_BACKLOG;
-      UTIL_LOG ("No backlog specified, using default [%s]\n", opt_backlog);
+   if (!(getenv ("webc_socket-backlog"))) {
+      setenv ("webc_sock-backlog", DEFAULT_BACKLOG, 1);
+      UTIL_LOG ("No backlog specified, using default [%s]\n", DEFAULT_BACKLOG);
    }
 
-   if (!opt_logfile) {
+   if (!(getenv ("webc_logfile"))) {
       UTIL_LOG ("No logfile specified, logging to stderr\n");
    } else {
       int fd_logfile = -1;
@@ -115,7 +115,7 @@ int main (int argc, char **argv)
          goto errorexit;
       }
 
-      logfile_namelen = strlen (opt_logfile)
+      logfile_namelen = strlen (getenv ("webc_logfile"))
                       + strlen (template)
                       + 1;
       if (!(logfile_name = malloc (logfile_namelen))) {
@@ -129,7 +129,7 @@ int main (int argc, char **argv)
                                                "%02i"    // hh
                                                "%02i"    // mm
                                                "%02i",   // ss
-                                               opt_logfile,
+                                               getenv ("webc_logfile"),
                                                time_fields->tm_year + 1900,
                                                time_fields->tm_mon + 1,
                                                time_fields->tm_mday,
@@ -169,12 +169,12 @@ int main (int argc, char **argv)
 
    /* ************************************************************** */
 
-   if ((sscanf (opt_portnum, "%u", &portnum))!=1) {
-      UTIL_LOG ("Listening port [%s] is invalid\n", opt_portnum);
+   if ((sscanf (getenv ("webc_listen-port"), "%u", &listen_port))!=1) {
+      UTIL_LOG ("Listening port [%s] is invalid\n", getenv ("webc_listen-port"));
       goto errorexit;
    }
-   if (portnum >> 16 || portnum==0) {
-      UTIL_LOG ("Listening port [%u] is too large\n", portnum);
+   if (listen_port >> 16 || listen_port==0) {
+      UTIL_LOG ("Listening port [%u] is too large\n", listen_port);
       goto errorexit;
    }
 
@@ -242,12 +242,12 @@ int main (int argc, char **argv)
 
    /* ************************************************************** */
 
-   if ((listenfd = create_listener (portnum, backlog)) < 0) {
+   if ((listenfd = create_listener (listen_port, backlog)) < 0) {
       UTIL_LOG ("Unable to create a listener, aborting\n");
       goto errorexit;
    }
 
-   UTIL_LOG ("Listening on %u q/%i\n", portnum, backlog);
+   UTIL_LOG ("Listening on %u q/%i\n", listen_port, backlog);
 
    errcount = 0;
    while (!g_exit_program && errcount < 5) {
@@ -309,24 +309,38 @@ static void signal_handler (int n)
    }
 }
 
-static void load_all_cline_opts (int argc, char **argv)
+static int load_all_cline_opts (int argc, char **argv)
 {
    (void)argc;
+   int retval = 0;
 
    for (size_t i=1; argv[i]; i++) {
       if ((memcmp (argv[i], "--", 2))!=0)
          continue;
 
-      char *value = &argv[i][2+namelen];
-      if (*value == '=')
+      char *value = strchr (argv[i], '=');
+      if (value && *value == '=')
          *value++  = 0;
+      else
+         value = "";
 
-      char *tmp = ds_str
-      setenv (argv[i], value, 1);
+      // We do this so that we do not clash with a system-set environmetn variable.
+      char *name = ds_str_cat ("webc_", argv[i], NULL);
+      if (!name) {
+         UTIL_LOG ("OOM Error\n");
+         return false;
+      }
+
+      int rc = setenv (name, value, 1);
+      free (name);
+
+      if (!rc) {
+         UTIL_LOG ("Failed to set option '%s'\n", argv[1]);
+      }
+      retval++;
 
       argv[i][0] = 0;
-      return value;
    }
-   return NULL;
+   return retval;
 }
 
