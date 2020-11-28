@@ -52,6 +52,41 @@ static void print_help_msg (const char *option)
    }
 }
 
+#define WEBC_HELP             ("help")
+#define WEBC_LISTEN_PORT      ("listen-port")
+#define WEBC_SOCKET_BACKLOG   ("socket-backlog")
+#define WEBC_WEB_ROOT         ("web-root")
+#define WEBC_LOGFILE          ("logfile")
+
+static const char *webc_getenv (const char *name)
+{
+   char *fullname = ds_str_cat ("webc_", name);
+   if (!fullname) {
+      UTIL_LOG ("OOM error\n");
+      return NULL;
+   }
+
+   char *ret = getenv (fullname);
+   free (fullname);
+   return ret;
+}
+
+static int webc_setenv (const char *name, const char *value)
+{
+   char *fullname = ds_str_cat ("webc_", name);
+   if (!fullname) {
+      UTIL_LOG ("OOM error\n");
+      return -1;
+   }
+
+   if ((setenv (fullname, value, 1))!=0) {
+      UTIL_LOG ("Failed to set environment variable [%s]: %m\n", fullname);
+      return -2;
+   }
+   free (fullname);
+   return 0;
+}
+
 static void signal_handler (int n);
 static int load_all_cline_opts (int argc, char **argv);
 
@@ -74,8 +109,11 @@ int main (int argc, char **argv)
     *  Handle the command line arguments
     */
    load_all_cline_opts (argc, argv);
-   if ((getenv ("webc_help"))!=NULL)
+
+   if ((webc_getenv (WEBC_HELP))!=NULL) {
       print_help_msg (NULL);
+      return EXIT_SUCCESS;
+   }
 
    bool opt_unknown = false;
    for (size_t i=1; argv[i]; i++) {
@@ -90,17 +128,22 @@ int main (int argc, char **argv)
       return EXIT_FAILURE;
    }
 
-   if (!(getenv ("webc_listen-port"))) {
-      setenv ("webc_listen-port", DEFAULT_LISTEN_PORT, 1);
-      UTIL_LOG ("No port number specified, using default [%s]\n", DEFAULT_LISTEN_PORT);
+   if (!(webc_getenv (WEBC_LISTEN_PORT))) {
+      webc_setenv (WEBC_LISTEN_PORT, DEFAULT_LISTEN_PORT);
+      UTIL_LOG ("No listen-port specified, using default [%s]\n", DEFAULT_LISTEN_PORT);
    }
 
-   if (!(getenv ("webc_socket-backlog"))) {
-      setenv ("webc_sock-backlog", DEFAULT_BACKLOG, 1);
-      UTIL_LOG ("No backlog specified, using default [%s]\n", DEFAULT_BACKLOG);
+   if (!(webc_getenv (WEBC_SOCKET_BACKLOG))) {
+      webc_setenv (WEBC_SOCKET_BACKLOG, DEFAULT_BACKLOG);
+      UTIL_LOG ("No socket-backlog specified, using default [%s]\n", DEFAULT_BACKLOG);
    }
 
-   if (!(getenv ("webc_logfile"))) {
+   if ((webc_getenv (WEBC_WEB_ROOT))) {
+      webc_setenv (WEBC_WEB_ROOT, DEFAULT_WEB_ROOT);
+      UTIL_LOG ("No web-root specified, using default [%s]\n", DEFAULT_WEB_ROOT);
+   }
+
+   if (!(webc_getenv (WEBC_LOGFILE))) {
       UTIL_LOG ("No logfile specified, logging to stderr\n");
    } else {
       int fd_logfile = -1;
@@ -115,7 +158,7 @@ int main (int argc, char **argv)
          goto errorexit;
       }
 
-      logfile_namelen = strlen (getenv ("webc_logfile"))
+      logfile_namelen = strlen (webc_getenv (WEBC_LOGFILE))
                       + strlen (template)
                       + 1;
       if (!(logfile_name = malloc (logfile_namelen))) {
@@ -129,7 +172,7 @@ int main (int argc, char **argv)
                                                "%02i"    // hh
                                                "%02i"    // mm
                                                "%02i",   // ss
-                                               getenv ("webc_logfile"),
+                                               webc_getenv (WEBC_LOGFILE),
                                                time_fields->tm_year + 1900,
                                                time_fields->tm_mon + 1,
                                                time_fields->tm_mday,
@@ -160,8 +203,8 @@ int main (int argc, char **argv)
       printf ("Logging to [%s]\n", logfile_name);
    }
 
-   if ((chdir (DEFAULT_WEB_ROOT))!=0) {
-      UTIL_LOG ("Failed to switch to web-root [%s]: %m\n", DEFAULT_WEB_ROOT);
+   if ((chdir (webc_getenv (WEBC_WEB_ROOT)))!=0) {
+      UTIL_LOG ("Failed to switch to web-root [%s]: %m\n", webc_getenv (WEBC_WEB_ROOT));
       goto errorexit;
    }
 
@@ -169,8 +212,8 @@ int main (int argc, char **argv)
 
    /* ************************************************************** */
 
-   if ((sscanf (getenv ("webc_listen-port"), "%u", &listen_port))!=1) {
-      UTIL_LOG ("Listening port [%s] is invalid\n", getenv ("webc_listen-port"));
+   if ((sscanf (webc_getenv (WEBC_LISTEN_PORT), "%u", &listen_port))!=1) {
+      UTIL_LOG ("Listening port [%s] is invalid\n", webc_getenv (WEBC_LISTEN_PORT));
       goto errorexit;
    }
    if (listen_port >> 16 || listen_port==0) {
@@ -324,15 +367,7 @@ static int load_all_cline_opts (int argc, char **argv)
       else
          value = "";
 
-      // We do this so that we do not clash with a system-set environmetn variable.
-      char *name = ds_str_cat ("webc_", argv[i], NULL);
-      if (!name) {
-         UTIL_LOG ("OOM Error\n");
-         return false;
-      }
-
-      int rc = setenv (name, value, 1);
-      free (name);
+      int rc = webc_setenv (argv[i], value);
 
       if (!rc) {
          UTIL_LOG ("Failed to set option '%s'\n", argv[1]);
