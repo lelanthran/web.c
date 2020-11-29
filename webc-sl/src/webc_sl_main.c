@@ -111,7 +111,7 @@ int main (int argc, char **argv)
       UTIL_LOG ("No socket-backlog specified, using default [%s]\n", DEFAULT_BACKLOG);
    }
 
-   if ((webc_getenv (WEBC_WEB_ROOT))) {
+   if (!(webc_getenv (WEBC_WEB_ROOT))) {
       webc_setenv (WEBC_WEB_ROOT, DEFAULT_WEB_ROOT);
       UTIL_LOG ("No web-root specified, using default [%s]\n", DEFAULT_WEB_ROOT);
    }
@@ -354,7 +354,10 @@ static int load_all_cline_opts (int argc, char **argv)
 
 static const char *webc_getenv (const char *name)
 {
-   char *fullname = ds_str_cat ("webc_", name);
+   if (!name)
+      return NULL;
+
+   char *fullname = ds_str_cat ("webc_", name, NULL);
    if (!fullname) {
       UTIL_LOG ("OOM error\n");
       return NULL;
@@ -367,15 +370,18 @@ static const char *webc_getenv (const char *name)
 
 static int webc_setenv (const char *name, const char *value)
 {
-   char *fullname = ds_str_cat ("webc_", name);
+   if (!name)
+      return -1;
+
+   char *fullname = ds_str_cat ("webc_", name, NULL);
    if (!fullname) {
       UTIL_LOG ("OOM error\n");
-      return -1;
+      return -2;
    }
 
    if ((setenv (fullname, value, 1))!=0) {
       UTIL_LOG ("Failed to set environment variable [%s]: %m\n", fullname);
-      return -2;
+      return -3;
    }
    free (fullname);
    return 0;
