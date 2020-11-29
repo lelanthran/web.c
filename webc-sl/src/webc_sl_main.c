@@ -90,33 +90,33 @@ int main (int argc, char **argv)
    bool opt_unknown = false;
    for (size_t i=1; argv[i]; i++) {
       if (argv[i][0]) {
-         UTIL_LOG ("Unknown option [%s]\n", argv[i]);
+         WEBC_UTIL_LOG ("Unknown option [%s]\n", argv[i]);
          opt_unknown = true;
       }
    }
 
    if (opt_unknown) {
-      UTIL_LOG ("Aborting\n");
+      WEBC_UTIL_LOG ("Aborting\n");
       return EXIT_FAILURE;
    }
 
    if (!(webc_getenv (WEBC_LISTEN_PORT))) {
       webc_setenv (WEBC_LISTEN_PORT, DEFAULT_LISTEN_PORT);
-      UTIL_LOG ("No listen-port specified, using default [%s]\n", DEFAULT_LISTEN_PORT);
+      WEBC_UTIL_LOG ("No listen-port specified, using default [%s]\n", DEFAULT_LISTEN_PORT);
    }
 
    if (!(webc_getenv (WEBC_SOCKET_BACKLOG))) {
       webc_setenv (WEBC_SOCKET_BACKLOG, DEFAULT_BACKLOG);
-      UTIL_LOG ("No socket-backlog specified, using default [%s]\n", DEFAULT_BACKLOG);
+      WEBC_UTIL_LOG ("No socket-backlog specified, using default [%s]\n", DEFAULT_BACKLOG);
    }
 
    if (!(webc_getenv (WEBC_WEB_ROOT))) {
       webc_setenv (WEBC_WEB_ROOT, DEFAULT_WEB_ROOT);
-      UTIL_LOG ("No web-root specified, using default [%s]\n", DEFAULT_WEB_ROOT);
+      WEBC_UTIL_LOG ("No web-root specified, using default [%s]\n", DEFAULT_WEB_ROOT);
    }
 
    if (!(webc_getenv (WEBC_LOGFILE))) {
-      UTIL_LOG ("No logfile specified, logging to stderr\n");
+      WEBC_UTIL_LOG ("No logfile specified, logging to stderr\n");
    } else {
       int fd_logfile = -1;
       static const char *template = ".YYYYMMDDhhmmss";
@@ -126,7 +126,7 @@ int main (int argc, char **argv)
       time_t now = time (NULL);
       struct tm *time_fields = localtime (&now);
       if (!time_fields) {
-         UTIL_LOG ("Failed to get local time: %m\n");
+         WEBC_UTIL_LOG ("Failed to get local time: %m\n");
          goto errorexit;
       }
 
@@ -134,7 +134,7 @@ int main (int argc, char **argv)
                       + strlen (template)
                       + 1;
       if (!(logfile_name = malloc (logfile_namelen))) {
-         UTIL_LOG ("OOM error constructing logfile name\n");
+         WEBC_UTIL_LOG ("OOM error constructing logfile name\n");
          goto errorexit;
       }
       snprintf (logfile_name, logfile_namelen, "%s."     // prefix
@@ -156,133 +156,133 @@ int main (int argc, char **argv)
                          O_WRONLY | O_CREAT,
                          S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
       if (fd_logfile < 0) {
-         UTIL_LOG ("Cannot open logfile [%s]\n", logfile_name);
+         WEBC_UTIL_LOG ("Cannot open logfile [%s]\n", logfile_name);
          goto errorexit;
       }
       if ((fd_stderr = fileno (stderr)) < 0) {
-         UTIL_LOG ("Unable to get file descriptors for stderr\n");
+         WEBC_UTIL_LOG ("Unable to get file descriptors for stderr\n");
          close (fd_logfile);
          goto errorexit;
       }
       if ((dup2 (fd_logfile, fd_stderr)) != fd_stderr) {
-         UTIL_LOG ("Failed to dup() file descriptors for logging: %m\n");
+         WEBC_UTIL_LOG ("Failed to dup() file descriptors for logging: %m\n");
          close (fd_logfile);
          goto errorexit;
       }
       fflush (stdout);
       fflush (stderr);
-      UTIL_LOG ("Logging to [%s]\n", logfile_name);
+      WEBC_UTIL_LOG ("Logging to [%s]\n", logfile_name);
       printf ("Logging to [%s]\n", logfile_name);
    }
 
    if ((chdir (webc_getenv (WEBC_WEB_ROOT)))!=0) {
-      UTIL_LOG ("Failed to switch to web-root [%s]: %m\n", webc_getenv (WEBC_WEB_ROOT));
+      WEBC_UTIL_LOG ("Failed to switch to web-root [%s]: %m\n", webc_getenv (WEBC_WEB_ROOT));
       goto errorexit;
    }
 
-   UTIL_LOG ("Starting the web.c server\n");
+   WEBC_UTIL_LOG ("Starting the web.c server\n");
 
    /* ************************************************************** */
 
    if ((sscanf (webc_getenv (WEBC_LISTEN_PORT), "%u", &listen_port))!=1) {
-      UTIL_LOG ("Listening port [%s] is invalid\n", webc_getenv (WEBC_LISTEN_PORT));
+      WEBC_UTIL_LOG ("Listening port [%s] is invalid\n", webc_getenv (WEBC_LISTEN_PORT));
       goto errorexit;
    }
    if (listen_port >> 16 || listen_port==0) {
-      UTIL_LOG ("Listening port [%u] is too large\n", listen_port);
+      WEBC_UTIL_LOG ("Listening port [%u] is too large\n", listen_port);
       goto errorexit;
    }
 
    /* ************************************************************** */
 
    if ((signal (SIGINT, signal_handler))==SIG_ERR) {
-      UTIL_LOG ("Failed to install signal handler: %m\n");
+      WEBC_UTIL_LOG ("Failed to install signal handler: %m\n");
       goto errorexit;
    }
 
    if ((signal (SIGPIPE, SIG_IGN))==SIG_ERR) {
-      UTIL_LOG ("Failed to block SIGPIPE: %m\n");
+      WEBC_UTIL_LOG ("Failed to block SIGPIPE: %m\n");
       goto errorexit;
    }
 
    /* ************************************************************** */
 
-   if (!(web_add_init ())) {
-      UTIL_LOG ("Failed to run the user-supplied initialisation\n");
+   if (!(webc_web_add_init ())) {
+      WEBC_UTIL_LOG ("Failed to run the user-supplied initialisation\n");
       goto errorexit;
    }
 
-   if (!(resource_global_handler_lock())) {
-      UTIL_LOG ("Failed to aquire global resource handler lock\n");
+   if (!(webc_resource_global_handler_lock())) {
+      WEBC_UTIL_LOG ("Failed to aquire global resource handler lock\n");
       goto errorexit;
    }
 
-   if (!(resource_global_handler_add ("handler_none",
-                                      EXTENSION_NONE, pattern_SUFFIX,
-                                      handler_none))) {
-      UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_NONE);
+   if (!(webc_resource_global_handler_add ("handler_none",
+                                           EXTENSION_NONE, pattern_SUFFIX,
+                                           webc_handler_none))) {
+      WEBC_UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_NONE);
       goto errorexit;
    }
 
-   if (!(resource_global_handler_add ("handler_none",
-                                      EXTENSION_DIR, pattern_SUFFIX,
-                                      handler_dir))) {
-      UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_DIR);
+   if (!(webc_resource_global_handler_add ("handler_none",
+                                           EXTENSION_DIR, pattern_SUFFIX,
+                                           webc_handler_dir))) {
+      WEBC_UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_DIR);
       goto errorexit;
    }
 
-   if (!(resource_global_handler_add ("handler_none",
-                                      EXTENSION_TEXT, pattern_SUFFIX,
-                                      handler_static_file))) {
-      UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_TEXT);
+   if (!(webc_resource_global_handler_add ("handler_none",
+                                           EXTENSION_TEXT, pattern_SUFFIX,
+                                           webc_handler_static_file))) {
+      WEBC_UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_TEXT);
       goto errorexit;
    }
 
-   if (!(resource_global_handler_add ("handler_none",
-                                      EXTENSION_HTML, pattern_SUFFIX,
-                                      handler_html))) {
-      UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_HTML);
+   if (!(webc_resource_global_handler_add ("handler_none",
+                                           EXTENSION_HTML, pattern_SUFFIX,
+                                           webc_handler_html))) {
+      WEBC_UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_HTML);
       goto errorexit;
    }
 
-   if (!(web_add_load_handlers ())) {
-      UTIL_LOG ("Failed to run the user-supplied load-handlers\n");
+   if (!(webc_web_add_load_handlers ())) {
+      WEBC_UTIL_LOG ("Failed to run the user-supplied load-handlers\n");
       goto errorexit;
    }
 
-   if (!(resource_global_handler_unlock())) {
-      UTIL_LOG ("Failed to release global resource handler lock\n");
+   if (!(webc_resource_global_handler_unlock())) {
+      WEBC_UTIL_LOG ("Failed to release global resource handler lock\n");
       goto errorexit;
    }
 
    /* ************************************************************** */
 
-   if ((listenfd = create_listener (listen_port, backlog)) < 0) {
-      UTIL_LOG ("Unable to create a listener, aborting\n");
+   if ((listenfd = webc_create_listener (listen_port, backlog)) < 0) {
+      WEBC_UTIL_LOG ("Unable to create a listener, aborting\n");
       goto errorexit;
    }
 
-   UTIL_LOG ("Listening on %u q/%i\n", listen_port, backlog);
+   WEBC_UTIL_LOG ("Listening on %u q/%i\n", listen_port, backlog);
 
    errcount = 0;
    while (!g_exit_program && errcount < 5) {
       free (remote_addr);
       remote_addr = NULL;
-      clientfd = accept_conn (listenfd, g_timeout,
-                                        &remote_addr,
-                                        &remote_port);
+      clientfd = webc_accept_conn (listenfd, g_timeout,
+                                            &remote_addr,
+                                            &remote_port);
       if (clientfd == 0) { // Timeout
          errcount = 0;
          continue;
       }
       if (clientfd < 0) { // Error
          errcount++;
-         UTIL_LOG ("Failed to accept(), errcount=%" PRIu8 "\n", errcount);
+         WEBC_UTIL_LOG ("Failed to accept(), errcount=%" PRIu8 "\n", errcount);
          continue;
       }
 
-      if (!(handle_conn (clientfd, remote_addr, remote_port))) {
-         UTIL_LOG ("Failed to start response thread for client [%s:%u]\n",
+      if (!(webc_handle_conn (clientfd, remote_addr, remote_port))) {
+         WEBC_UTIL_LOG ("Failed to start response thread for client [%s:%u]\n",
                      remote_addr, remote_port);
          goto errorexit;
       }
@@ -291,7 +291,7 @@ int main (int argc, char **argv)
    }
 
    if (!g_exit_program && errcount) {
-      UTIL_LOG ("Aborting due to excessive error-count %" PRIu8 "\n", errcount);
+      WEBC_UTIL_LOG ("Aborting due to excessive error-count %" PRIu8 "\n", errcount);
       goto errorexit;
    }
 

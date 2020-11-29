@@ -27,7 +27,7 @@ int load_all_cline_opts (int argc, char **argv)
       int rc = webc_setenv (argv[i], value);
 
       if (!rc) {
-         UTIL_LOG ("Failed to set option '%s'\n", argv[1]);
+         WEBC_UTIL_LOG ("Failed to set option '%s'\n", argv[1]);
       }
       retval++;
 
@@ -43,7 +43,7 @@ const char *webc_getenv (const char *name)
 
    char *fullname = ds_str_cat ("webc_", name, NULL);
    if (!fullname) {
-      UTIL_LOG ("OOM error\n");
+      WEBC_UTIL_LOG ("OOM error\n");
       return NULL;
    }
 
@@ -59,12 +59,12 @@ int webc_setenv (const char *name, const char *value)
 
    char *fullname = ds_str_cat ("webc_", name, NULL);
    if (!fullname) {
-      UTIL_LOG ("OOM error\n");
+      WEBC_UTIL_LOG ("OOM error\n");
       return -2;
    }
 
    if ((setenv (fullname, value, 1))!=0) {
-      UTIL_LOG ("Failed to set environment variable [%s]: %m\n", fullname);
+      WEBC_UTIL_LOG ("Failed to set environment variable [%s]: %m\n", fullname);
       return -3;
    }
    free (fullname);
