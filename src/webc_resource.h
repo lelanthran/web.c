@@ -14,15 +14,15 @@ enum webc_pattern_type_t {
    pattern_EXACT
 };
 
-typedef int (webc_resource_handler_t) (int                    fd,
-                                       char                  *remote_addr,
-                                       uint16_t               remote_port,
-                                       enum method_t          method,
-                                       enum http_version_t    version,
-                                       const char            *resource,
-                                       char                 **rqst_headers,
-                                       webc_header_t         *rsp_headers,
-                                       char                  *vars);
+typedef int (webc_resource_handler_t) (int                        fd,
+                                       char                      *remote_addr,
+                                       uint16_t                   remote_port,
+                                       enum webc_method_t         method,
+                                       enum webc_http_version_t   version,
+                                       const char                *resource,
+                                       char                     **rqst_headers,
+                                       webc_header_t             *rsp_headers,
+                                       char                      *vars);
 
 #ifdef __cplusplus
 extern "C" {

@@ -132,7 +132,7 @@ webc_resource_handler_t *webc_resource_handler_find (const char *resource)
          case pattern_SUFFIX:
             if ((strncmp (&resource[cmp_len],
                           g_resources[i]->pattern, pattern_len))==0) {
-               UTIL_LOG ("Matched suffix: [%s]: [%s]=>[%s]\n",
+               WEBC_UTIL_LOG ("Matched suffix: [%s]: [%s]=>[%s]\n",
                           g_resources[i]->pattern,
                           resource,
                           g_resources[i]->name);
@@ -144,7 +144,7 @@ webc_resource_handler_t *webc_resource_handler_find (const char *resource)
             if (pattern_len > res_len)
                break;
             if ((strncmp (resource, g_resources[i]->pattern, pattern_len))==0) {
-               UTIL_LOG ("Matched prefix: [%s]: [%s]=>[%s]\n",
+               WEBC_UTIL_LOG ("Matched prefix: [%s]: [%s]=>[%s]\n",
                           g_resources[i]->pattern,
                           resource,
                           g_resources[i]->name);
@@ -154,7 +154,7 @@ webc_resource_handler_t *webc_resource_handler_find (const char *resource)
 
          case pattern_EXACT:
             if ((strcmp (resource, g_resources[i]->pattern))==0) {
-               UTIL_LOG ("Matched exact: [%s]: [%s]=>[%s]\n",
+               WEBC_UTIL_LOG ("Matched exact: [%s]: [%s]=>[%s]\n",
                           g_resources[i]->pattern,
                           resource,
                           g_resources[i]->name);
@@ -166,7 +166,7 @@ webc_resource_handler_t *webc_resource_handler_find (const char *resource)
 
    }
 
-   UTIL_LOG ("No match for [%s], using handler_static_file()\n", resource);
+   WEBC_UTIL_LOG ("No match for [%s], using handler_static_file()\n", resource);
    return webc_handler_static_file;
 }
 

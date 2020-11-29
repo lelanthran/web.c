@@ -22,22 +22,22 @@
 #include "webc_config.h"
 #include "webc_header.h"
 
-static enum method_t get_rqst_method (const char *rqst_line)
+static enum webc_method_t get_rqst_method (const char *rqst_line)
 {
    static const struct {
       const char *name;
-      enum method_t method;
+      enum webc_method_t method;
    } methods[] = {
-      { "UNKNOWN",   method_UNKNOWN  },
-      { "GET",       method_GET      },
-      { "HEAD",      method_HEAD     },
-      { "POST",      method_POST     },
-      { "PUT",       method_PUT      },
-      { "DELETE",    method_DELETE   },
-      { "TRACE",     method_TRACE    },
-      { "OPTIONS",   method_OPTIONS  },
-      { "CONNECT",   method_CONNECT  },
-      { "PATCH",     method_PATCH    },
+      { "UNKNOWN",   webc_method_UNKNOWN  },
+      { "GET",       webc_method_GET      },
+      { "HEAD",      webc_method_HEAD     },
+      { "POST",      webc_method_POST     },
+      { "PUT",       webc_method_PUT      },
+      { "DELETE",    webc_method_DELETE   },
+      { "TRACE",     webc_method_TRACE    },
+      { "OPTIONS",   webc_method_OPTIONS  },
+      { "CONNECT",   webc_method_CONNECT  },
+      { "PATCH",     webc_method_PATCH    },
    };
 
    for (size_t i=0; i<sizeof methods/sizeof methods[0]; i++) {
@@ -46,26 +46,26 @@ static enum method_t get_rqst_method (const char *rqst_line)
       }
    }
 
-   return method_UNKNOWN;
+   return webc_method_UNKNOWN;
 }
 
-static enum http_version_t get_rqst_version (const char *rqst_line)
+static enum webc_http_version_t get_rqst_version (const char *rqst_line)
 {
    static const struct {
-      const char *name;
-      enum http_version_t version;
+      const char              *name;
+      enum webc_http_version_t version;
    } versions[] = {
-      { "UNKNOWN",      http_version_UNKNOWN  },
-      { "XXXHTTP/0.9",  http_version_0_9      },
-      { "HTTP/1.0",     http_version_1_0      },
-      { "HTTP/1.1",     http_version_1_1      },
-      { "XXXHTTP/2",    http_version_2_0      },
-      { "XXXHTTP/3",    http_version_3_0      },
+      { "UNKNOWN",      webc_http_version_UNKNOWN  },
+      { "XXXHTTP/0.9",  webc_http_version_0_9      },
+      { "HTTP/1.0",     webc_http_version_1_0      },
+      { "HTTP/1.1",     webc_http_version_1_1      },
+      { "XXXHTTP/2",    webc_http_version_2_0      },
+      { "XXXHTTP/3",    webc_http_version_3_0      },
    };
 
    char *tmp = strstr (rqst_line, "HTTP/");
    if (!tmp)
-      return http_version_UNKNOWN;
+      return webc_http_version_UNKNOWN;
 
    for (size_t i=0; i<sizeof versions/sizeof versions[0]; i++) {
       if ((memcmp (versions[i].name, tmp, strlen (versions[i].name)))==0) {
@@ -73,7 +73,7 @@ static enum http_version_t get_rqst_version (const char *rqst_line)
       }
    }
 
-   return http_version_UNKNOWN;
+   return webc_http_version_UNKNOWN;
 }
 
 static char *get_rqst_resource (const char *rqst_line)
@@ -137,7 +137,7 @@ static char *get_rqst_getvars (const char *rqst_line)
 int accept4(int sockfd, struct sockaddr *addr,
             socklen_t *addrlen, int flags);
 
-int create_listener (uint32_t portnum, int backlog)
+int webc_create_listener (uint32_t portnum, int backlog)
 {
    struct sockaddr_in addr;
 
@@ -148,20 +148,20 @@ int create_listener (uint32_t portnum, int backlog)
 
    fd = socket (AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
    if (fd < 0) {
-      UTIL_LOG ("socket() failed: %m\n");
+      WEBC_UTIL_LOG ("socket() failed: %m\n");
       return -1;
    }
    int enable = 1;
    if (setsockopt (fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
-      UTIL_LOG ("setsockopt(SO_REUSEADDR) failed, continuing");
+      WEBC_UTIL_LOG ("setsockopt(SO_REUSEADDR) failed, continuing");
 
    if (bind (fd, (struct sockaddr *)&addr, sizeof addr)!=0) {
-      UTIL_LOG ("bind() failed: %m\n");
+      WEBC_UTIL_LOG ("bind() failed: %m\n");
       close (fd);
       return -1;
    }
    if (listen (fd, backlog)!=0) {
-      UTIL_LOG ("listen() failed: %m\n");
+      WEBC_UTIL_LOG ("listen() failed: %m\n");
       close (fd);
       return -1;
    }
@@ -169,7 +169,7 @@ int create_listener (uint32_t portnum, int backlog)
 }
 
 
-int accept_conn (int listenfd, size_t timeout,
+int webc_accept_conn (int listenfd, size_t timeout,
                                char **remote_addr,
                                uint16_t *remote_port)
 {
@@ -272,7 +272,7 @@ static bool fd_read_line (int fd, char **dst, size_t *dstlen)
    while ((read (fd, &c, 1))==1) {
       char *tmp = realloc (line, line_len + 2);
       if (!tmp) {
-         UTIL_LOG ("OOM error\n");
+         WEBC_UTIL_LOG ("OOM error\n");
          free (line);
          return false;
       }
@@ -290,7 +290,7 @@ static bool fd_read_line (int fd, char **dst, size_t *dstlen)
    return true;
 }
 
-const char *get_http_rspstr (int status)
+const char *webc_get_http_rspstr (int status)
 {
    static const struct {
       int status;
@@ -406,12 +406,12 @@ static void *thread_func (void *ta)
 
    struct thread_args_t *args = ta;
 
-   enum method_t method = 0;
+   enum webc_method_t method = 0;
    char *org_resource = NULL;
    char *resource = NULL;
    char *getvars = NULL;
    const char *content_type = NULL;
-   enum http_version_t version = 0;
+   enum webc_http_version_t version = 0;
    webc_resource_handler_t *webc_resource_handler = NULL;
 
    char *rqst_line = NULL;
@@ -428,7 +428,7 @@ static void *thread_func (void *ta)
    memset (rqst_header_lens, 0, MAX_HTTP_HEADERS * sizeof rqst_header_lens[0]);
 
    if (!(rsp_headers = webc_header_new ())) {
-      THRD_LOG (args->remote_addr, args->remote_port,
+      WEBC_THRD_LOG (args->remote_addr, args->remote_port,
                   "Failed to create header object\n");
       goto errorexit;
    }
@@ -436,17 +436,17 @@ static void *thread_func (void *ta)
    if (!(fd_read_line (args->fd, &rqst_line, &rqst_line_len)) ||
        !rqst_line ||
        !rqst_line_len) {
-      THRD_LOG (args->remote_addr, args->remote_port,
+      WEBC_THRD_LOG (args->remote_addr, args->remote_port,
                 "Malformed request line: [%s]. Aborting.\n", rqst_line);
       status = 400;
       goto errorexit;
    }
 
-   TS_LOG ("[%s:%u] [%s]\n", args->remote_addr, args->remote_port, rqst_line);
+   WEBC_TS_LOG ("[%s:%u] [%s]\n", args->remote_addr, args->remote_port, rqst_line);
 
    for (i=0; i<MAX_HTTP_HEADERS; i++) {
       if (!(fd_read_line (args->fd, &rqst_headers[i], &rqst_header_lens[i]))) {
-         THRD_LOG (args->remote_addr, args->remote_port,
+         WEBC_THRD_LOG (args->remote_addr, args->remote_port,
                    "Unexpected end of rqst_headers");
          status = 400;
          goto errorexit;
@@ -458,17 +458,17 @@ static void *thread_func (void *ta)
    }
 
    if (i >= MAX_HTTP_HEADERS) {
-      THRD_LOG (args->remote_addr, args->remote_port,
+      WEBC_THRD_LOG (args->remote_addr, args->remote_port,
                 "Too many rqst_headers sent (%zu), ignoring the rest\n", i);
    }
 
 #if 0
-   THRD_LOG (args->remote_addr, args->remote_port, "Collected all rqst_headers\n");
-   THRD_LOG (args->remote_addr, args->remote_port,
+   WEBC_THRD_LOG (args->remote_addr, args->remote_port, "Collected all rqst_headers\n");
+   WEBC_THRD_LOG (args->remote_addr, args->remote_port,
              "rqst: [%s]\n", rqst_line);
 
    for (size_t i=0; rqst_headers[i]; i++) {
-      THRD_LOG (args->remote_addr, args->remote_port,
+      WEBC_THRD_LOG (args->remote_addr, args->remote_port,
                 "header: [%s]\n", rqst_headers[i]);
    }
 #endif
@@ -480,7 +480,7 @@ static void *thread_func (void *ta)
    webc_resource_handler = webc_resource_handler_find (org_resource);
 
    if (!method || !org_resource || !version || !webc_resource_handler) {
-      THRD_LOG (args->remote_addr, args->remote_port,
+      WEBC_THRD_LOG (args->remote_addr, args->remote_port,
                 "Unrecognised method, version or resource [%s]\n",
                  rqst_line);
       status = 400;
@@ -488,7 +488,7 @@ static void *thread_func (void *ta)
    }
 
    if ((strstr (org_resource, ".."))!=NULL) {
-      THRD_LOG (args->remote_addr, args->remote_port,
+      WEBC_THRD_LOG (args->remote_addr, args->remote_port,
                 "Attempt to access parent directory [%s]\n",
                  rqst_line);
       status = 403;
@@ -504,7 +504,7 @@ static void *thread_func (void *ta)
     */
    content_type = headerlist_find (rqst_headers,
                                                webc_header_CONTENT_TYPE);
-   if (content_type && method == method_POST) {
+   if (content_type && method == webc_method_POST) {
       // Must see if other methods can send forms
       static const char *mform_data = "multipart/form-data",
                         *awww_form = "application/x-www-form-urlencoded";
@@ -522,12 +522,12 @@ static void *thread_func (void *ta)
                                    rqst_headers, rsp_headers,
                                    getvars);
 
-   TS_LOG ("[%s:%u] =>[%i]\n", args->remote_addr, args->remote_port, status);
+   WEBC_TS_LOG ("[%s:%u] =>[%i]\n", args->remote_addr, args->remote_port, status);
 
 errorexit:
 
    if (!status || status!=200) {
-      rsp_line = get_http_rspstr (status);
+      rsp_line = webc_get_http_rspstr (status);
       write (args->fd, rsp_line, strlen (rsp_line));
       write (args->fd, "\r\n\r\n", 4);
       char outbuf[100];
@@ -548,13 +548,13 @@ errorexit:
    shutdown (args->fd, SHUT_RDWR);
    close (args->fd);
 
-   THRD_LOG (args->remote_addr, args->remote_port, "Ending thread\n");
+   WEBC_THRD_LOG (args->remote_addr, args->remote_port, "Ending thread\n");
    thread_args_del (args);
 
    return NULL;
 }
 
-bool handle_conn (int fd, char *remote_addr, uint16_t remote_port)
+bool webc_handle_conn (int fd, char *remote_addr, uint16_t remote_port)
 {
    bool error = true;
 
@@ -563,22 +563,22 @@ bool handle_conn (int fd, char *remote_addr, uint16_t remote_port)
    struct thread_args_t *args = NULL;
 
    if (!(args = thread_args_new (fd, remote_addr, remote_port))) {
-      UTIL_LOG ("[%s:%u] OOM error\n", remote_addr, remote_port);
+      WEBC_UTIL_LOG ("[%s:%u] OOM error\n", remote_addr, remote_port);
       goto errorexit;
    }
 
    if ((pthread_attr_init (&attr))!=0) {
-      UTIL_LOG ("[%s:%u] Failed to initiliase thread attributes: %m\n",
+      WEBC_UTIL_LOG ("[%s:%u] Failed to initiliase thread attributes: %m\n",
                   remote_addr, remote_port);
       goto errorexit;
    }
    if ((pthread_attr_setdetachstate (&attr, PTHREAD_CREATE_DETACHED))!=0) {
-      UTIL_LOG ("[%s:%u] Failed to set the thread to detached: %m\n",
+      WEBC_UTIL_LOG ("[%s:%u] Failed to set the thread to detached: %m\n",
                   remote_addr, remote_port);
       goto errorexit;
    }
    if ((pthread_create (&thread, &attr, thread_func, args))!=0) {
-      UTIL_LOG ("[%s:%u] Failed to start thread\n", remote_addr, remote_port);
+      WEBC_UTIL_LOG ("[%s:%u] Failed to start thread\n", remote_addr, remote_port);
       goto errorexit;
    }
 
@@ -587,7 +587,7 @@ bool handle_conn (int fd, char *remote_addr, uint16_t remote_port)
 
 errorexit:
    if (error) {
-      UTIL_LOG ("Thread start failure: closing client fd %i\n", fd);
+      WEBC_UTIL_LOG ("Thread start failure: closing client fd %i\n", fd);
       close (fd);
       thread_args_del (args);
    }
@@ -595,7 +595,7 @@ errorexit:
 }
 
 
-bool util_vsprintf (char **dst, size_t *dst_len, const char *fmts, va_list ap)
+bool webc_util_vsprintf (char **dst, size_t *dst_len, const char *fmts, va_list ap)
 {
    va_list ac;
 
@@ -624,11 +624,11 @@ bool util_vsprintf (char **dst, size_t *dst_len, const char *fmts, va_list ap)
    return true;
 }
 
-bool util_sprintf (char **dst, size_t *dst_len, const char *fmts, ...)
+bool webc_util_sprintf (char **dst, size_t *dst_len, const char *fmts, ...)
 {
    va_list ap;
    va_start (ap, fmts);
-   bool ret = util_vsprintf (dst, dst_len, fmts, ap);
+   bool ret = webc_util_vsprintf (dst, dst_len, fmts, ap);
    va_end (ap);
    return ret;
 }

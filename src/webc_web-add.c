@@ -10,15 +10,15 @@
 #include "webc_handler.h"
 #include "webc_web-add.h"
 
-static int app_handler (int                    fd,
-                        char                  *remote_addr,
-                        uint16_t               remote_port,
-                        enum method_t          method,
-                        enum http_version_t    version,
-                        const char            *resource,
-                        char                 **rqst_headers,
-                        webc_header_t         *rsp_headers,
-                        char                  *vars)
+static int app_handler (int                      fd,
+                        char                    *remote_addr,
+                        uint16_t                 remote_port,
+                        enum webc_method_t       method,
+                        enum webc_http_version_t version,
+                        const char              *resource,
+                        char                   **rqst_headers,
+                        webc_header_t           *rsp_headers,
+                        char                    *vars)
 {
    (void)remote_addr;
    (void)remote_port;
@@ -27,7 +27,7 @@ static int app_handler (int                    fd,
    (void)rqst_headers;
 
    webc_header_set (rsp_headers, webc_header_CONTENT_TYPE, "text/html");
-   write (fd, get_http_rspstr (200), strlen (get_http_rspstr (200)));
+   write (fd, webc_get_http_rspstr (200), strlen (webc_get_http_rspstr (200)));
    webc_header_write (rsp_headers, fd);
 
    dprintf (fd, "<html>\n\t<body>\n\t\t<pre>%s\n%s</pre>\n\t</body>\n</html>\n",
@@ -53,7 +53,7 @@ bool web_add_load_handlers (void)
 
    if (!(webc_resource_global_handler_add ("app_handler", "/myapp", pattern_PREFIX,
                                       app_handler))) {
-      UTIL_LOG ("Failed to add handler [%s]\n", "/myapp");
+      WEBC_UTIL_LOG ("Failed to add handler [%s]\n", "/myapp");
       return false;
    }
 

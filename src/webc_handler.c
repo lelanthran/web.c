@@ -24,7 +24,7 @@ static int get_filesize (const char *fname, char *dst_sizestr,
    struct stat sb;
 
    if ((stat (fname, &sb))!=0) {
-      UTIL_LOG ("Failed to stat [%s]: %m\n", fname);
+      WEBC_UTIL_LOG ("Failed to stat [%s]: %m\n", fname);
       if (errno == EACCES) {
          return 403;
       } else {
@@ -54,7 +54,7 @@ static int local_sendfile (int fd, const char *fname, uint64_t offset,
    ssize_t rc = 0;
 
    if ((in_fd = open (fname, O_RDONLY, 0)) < 0) {
-      UTIL_LOG ("Failed to open [%s]: %m\n", fname);
+      WEBC_UTIL_LOG ("Failed to open [%s]: %m\n", fname);
       if (errno == EACCES)
          ret = 403;
       goto errorexit;
@@ -63,7 +63,7 @@ static int local_sendfile (int fd, const char *fname, uint64_t offset,
    // TODO: This must be done in a loop.
    while ((rc = sendfile (fd, in_fd, &offs, nbytes)) != (ssize_t)nbytes) {
       if (rc == -1) {
-         UTIL_LOG ("Did not transmit all bytes\n");
+         WEBC_UTIL_LOG ("Did not transmit all bytes\n");
          goto errorexit;
       }
       nbytes -= rc;
@@ -78,15 +78,15 @@ errorexit:
    return ret;
 }
 
-int webc_handler_static_file (int                    fd,
-                              char                  *remote_addr,
-                              uint16_t               remote_port,
-                              enum method_t          method,
-                              enum http_version_t    version,
-                              const char            *resource,
-                              char                 **rqst_headers,
-                              webc_header_t         *rsp_headers,
-                              char                  *vars)
+int webc_handler_static_file (int                         fd,
+                              char                       *remote_addr,
+                              uint16_t                    remote_port,
+                              enum webc_method_t          method,
+                              enum webc_http_version_t    version,
+                              const char                 *resource,
+                              char                      **rqst_headers,
+                              webc_header_t              *rsp_headers,
+                              char                       *vars)
 {
    (void) vars;
 
@@ -100,7 +100,7 @@ int webc_handler_static_file (int                    fd,
    char slen[25];
    uint64_t st_size;
    if ((statcode = get_filesize (resource, slen, &st_size))!=200) {
-      THRD_LOG (remote_addr, remote_port, "Failed to access file [%s]\n",
+      WEBC_THRD_LOG (remote_addr, remote_port, "Failed to access file [%s]\n",
                                           resource);
       return statcode;
    }
@@ -109,24 +109,24 @@ int webc_handler_static_file (int                    fd,
    webc_header_set (rsp_headers, webc_header_CONTENT_LENGTH, slen);
    webc_header_set (rsp_headers, webc_header_CONTENT_DISPOSITION, "attachment;");
 
-   write (fd, get_http_rspstr (200), strlen (get_http_rspstr (200)));
+   write (fd, webc_get_http_rspstr (200), strlen (webc_get_http_rspstr (200)));
 
    webc_header_write (rsp_headers, fd);
 
-   UTIL_LOG ("Sending static file\n");
+   WEBC_UTIL_LOG ("Sending static file\n");
 
    return local_sendfile (fd, resource, 0, st_size);
 }
 
-int webc_handler_html (int                    fd,
-                       char                  *remote_addr,
-                       uint16_t               remote_port,
-                       enum method_t          method,
-                       enum http_version_t    version,
-                       const char            *resource,
-                       char                 **rqst_headers,
-                       webc_header_t         *rsp_headers,
-                       char                  *vars)
+int webc_handler_html (int                       fd,
+                       char                     *remote_addr,
+                       uint16_t                  remote_port,
+                       enum webc_method_t        method,
+                       enum webc_http_version_t  version,
+                       const char               *resource,
+                       char                    **rqst_headers,
+                       webc_header_t            *rsp_headers,
+                       char                     *vars)
 {
    (void) method;
    (void) version;
@@ -135,13 +135,13 @@ int webc_handler_html (int                    fd,
    (void) rsp_headers;
    (void) vars;
 
-   UTIL_LOG ("Sending html page\n");
+   WEBC_UTIL_LOG ("Sending html page\n");
 
    char slen[25];
    uint64_t st_size;
    int statcode = 0;
    if ((statcode = get_filesize (resource, slen, &st_size))!=200) {
-      THRD_LOG (remote_addr, remote_port, "Failed to access file [%s]\n",
+      WEBC_THRD_LOG (remote_addr, remote_port, "Failed to access file [%s]\n",
                                           resource);
       return statcode;
    }
@@ -149,22 +149,22 @@ int webc_handler_html (int                    fd,
    webc_header_set (rsp_headers, webc_header_CONTENT_TYPE, "text/html");
    webc_header_set (rsp_headers, webc_header_CONTENT_LENGTH, slen);
 
-   const char *rsp = get_http_rspstr (200);
+   const char *rsp = webc_get_http_rspstr (200);
    write (fd, rsp, strlen (rsp));
    webc_header_write (rsp_headers, fd);
 
    return local_sendfile (fd, resource, 0, st_size);
 }
 
-int webc_handler_none (int                    fd,
-                       char                  *remote_addr,
-                       uint16_t               remote_port,
-                       enum method_t          method,
-                       enum http_version_t    version,
-                       const char            *resource,
-                       char                 **rqst_headers,
-                       webc_header_t         *rsp_headers,
-                       char                  *vars)
+int webc_handler_none (int                          fd,
+                       char                        *remote_addr,
+                       uint16_t                     remote_port,
+                       enum webc_method_t           method,
+                       enum webc_http_version_t     version,
+                       const char                  *resource,
+                       char                       **rqst_headers,
+                       webc_header_t               *rsp_headers,
+                       char                        *vars)
 {
    struct stat sb;
    int (*statfunc) (const char *pathname, struct stat *statbuf);
@@ -172,7 +172,7 @@ int webc_handler_none (int                    fd,
    statfunc = FOLLOW_SYMLINKS ? lstat : stat;
 
    if ((statfunc (resource, &sb))!=0) {
-      THRD_LOG (remote_addr, remote_port, "Failed to stat [%s]\n", resource);
+      WEBC_THRD_LOG (remote_addr, remote_port, "Failed to stat [%s]\n", resource);
       return 404;
    }
 
@@ -194,15 +194,15 @@ int webc_handler_none (int                    fd,
    return 500;
 }
 
-int webc_handler_dir (int                    fd,
-                      char                  *remote_addr,
-                      uint16_t               remote_port,
-                      enum method_t          method,
-                      enum http_version_t    version,
-                      const char            *resource,
-                      char                 **rqst_headers,
-                      webc_header_t         *rsp_headers,
-                      char                  *vars)
+int webc_handler_dir (int                         fd,
+                      char                       *remote_addr,
+                      uint16_t                    remote_port,
+                      enum webc_method_t          method,
+                      enum webc_http_version_t    version,
+                      const char                 *resource,
+                      char                      **rqst_headers,
+                      webc_header_t              *rsp_headers,
+                      char                       *vars)
 {
 
    struct stat sb;
@@ -214,26 +214,26 @@ int webc_handler_dir (int                    fd,
    }
 
    if ((stat (resource, &sb))!=0) {
-      THRD_LOG (remote_addr, remote_port,
+      WEBC_THRD_LOG (remote_addr, remote_port,
                   "In dir [%s] Failed to stat [%s]: %m\n", getenv ("PWD"), resource);
       return 404;
    }
 
    if (!(S_ISDIR (sb.st_mode))) {
-      THRD_LOG (remote_addr, remote_port, "Not a directory [%s]\n", resource);
+      WEBC_THRD_LOG (remote_addr, remote_port, "Not a directory [%s]\n", resource);
       return 500;
    }
 
    index_html_len = strlen (resource) + 1 + strlen (DEFAULT_INDEX_FILE) + 1;
    if (!(index_html = malloc (index_html_len))) {
-      THRD_LOG (remote_addr, remote_port, "Out of memory [%s]\n", resource);
+      WEBC_THRD_LOG (remote_addr, remote_port, "Out of memory [%s]\n", resource);
       return 500;
    }
 
    strcpy (index_html, resource);
    strcat (index_html, DEFAULT_INDEX_FILE);
 
-   THRD_LOG (remote_addr, remote_port, "Trying [%s]\n", index_html);
+   WEBC_THRD_LOG (remote_addr, remote_port, "Trying [%s]\n", index_html);
 
    if ((stat (index_html, &sb))!=0) {
       int ret = webc_handler_dirlist (fd, remote_addr, remote_port, method, version,
@@ -263,7 +263,7 @@ char **get_dirlist (const char *addr, uint16_t port, const char *path)
    size_t nrecs = 0;
 
    if (!(dirp = opendir (path))) {
-      THRD_LOG (addr, port, "Unable to opendir [%s]\n", path);
+      WEBC_THRD_LOG (addr, port, "Unable to opendir [%s]\n", path);
       return NULL;
    }
 
@@ -323,15 +323,15 @@ static int cb_strsort (const void *lhs, const void *rhs)
    return strcmp (*slhs, *srhs);
 }
 
-int webc_handler_dirlist (int                    fd,
-                          char                  *remote_addr,
-                          uint16_t               remote_port,
-                          enum method_t          method,
-                          enum http_version_t    version,
-                          const char            *resource,
-                          char                 **rqst_headers,
-                          webc_header_t         *rsp_headers,
-                          char                  *vars)
+int webc_handler_dirlist (int                       fd,
+                          char                     *remote_addr,
+                          uint16_t                  remote_port,
+                          enum webc_method_t        method,
+                          enum webc_http_version_t  version,
+                          const char               *resource,
+                          char                    **rqst_headers,
+                          webc_header_t            *rsp_headers,
+                          char                     *vars)
 {
    (void) method;
    (void) version;
@@ -359,7 +359,7 @@ int webc_handler_dirlist (int                    fd,
    char **dirlist = get_dirlist (remote_addr, remote_port, resource);
    char *tmp_resource = strdup (resource);
 
-   const char *rsp = get_http_rspstr (200);
+   const char *rsp = webc_get_http_rspstr (200);
    write (fd, rsp, strlen (rsp));
 
    write (fd, "Content-type: text/html\r\n\r\n", 27);
@@ -387,7 +387,7 @@ int webc_handler_dirlist (int                    fd,
       if ((memcmp (dirlist[i], "..", 3))==0) {
          char *parent = strdup (tmp_resource);
          if (!parent) {
-            THRD_LOG (remote_addr, remote_port, "OOM error [%s]\n", dirlist[i]);
+            WEBC_THRD_LOG (remote_addr, remote_port, "OOM error [%s]\n", dirlist[i]);
             free (tmp_resource);
             return 500;
          }
@@ -406,12 +406,12 @@ int webc_handler_dirlist (int                    fd,
          if (!(strchr (parent, '/')))
             fmts = "<tr><td><a href='/%s/'>%s</a></td></tr>\n";
 
-         rc = util_sprintf (&row, &rowlen, fmts,
+         rc = webc_util_sprintf (&row, &rowlen, fmts,
                                  parent,
                                  dirlist[i]);
          free (parent);
       } else {
-         rc = util_sprintf (&row, &rowlen, "<tr><td>"
+         rc = webc_util_sprintf (&row, &rowlen, "<tr><td>"
                                  "<a href='/%s/%s'>%s</a>"
                                  "</td></tr>\n",
                                  tmp_resource,
@@ -423,7 +423,7 @@ int webc_handler_dirlist (int                    fd,
       free (row);
       row = NULL;
       if (!rc) {
-         THRD_LOG (remote_addr, remote_port, "OOM error [%s]\n", dirlist[i]);
+         WEBC_THRD_LOG (remote_addr, remote_port, "OOM error [%s]\n", dirlist[i]);
          free (tmp_resource);
          return 500;
       }
