@@ -245,6 +245,31 @@ int main (int argc, char **argv)
       goto errorexit;
    }
 
+   /* *************************************************************** */
+   if (!(webc_resource_global_handler_add ("auth", "/auth", pattern_PREFIX,
+                                           webc_sl_handler_auth))) {
+      WEBC_UTIL_LOG ("Failed to add handler [%s]\n", "/myapp");
+      return false;
+   }
+
+   if (!(webc_resource_global_handler_add ("call_sp", "/call_sp", pattern_PREFIX,
+                                           webc_sl_handler_call_sp))) {
+      WEBC_UTIL_LOG ("Failed to add handler [%s]\n", "/myapp");
+      return false;
+   }
+
+   if (!(webc_resource_global_handler_add ("call_native", "/call_native", pattern_PREFIX,
+                                           webc_sl_handler_call_native))) {
+      WEBC_UTIL_LOG ("Failed to add handler [%s]\n", "/myapp");
+      return false;
+   }
+
+   if (!(webc_resource_global_handler_add ("call_fileAPI", "/call_fileAPI", pattern_PREFIX,
+                                           webc_sl_handler_call_fileAPI))) {
+      WEBC_UTIL_LOG ("Failed to add handler [%s]\n", "/myapp");
+      return false;
+   }
+
    if (!(webc_web_add_load_handlers ())) {
       WEBC_UTIL_LOG ("Failed to run the user-supplied load-handlers\n");
       goto errorexit;

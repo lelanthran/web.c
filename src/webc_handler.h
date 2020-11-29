@@ -28,6 +28,8 @@ extern "C" {
    WEBC_HANDLER (webc_handler_dir);
    WEBC_HANDLER (webc_handler_dirlist);
 
+#undef WEBC_HANDLER
+
 #ifdef __cplusplus
 };
 #endif

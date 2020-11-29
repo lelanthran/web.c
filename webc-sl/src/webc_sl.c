@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <unistd.h>
+#include <fcntl.h>
+
 #include "webc_sl.h"
 
 #include "webc_util.h"
@@ -71,3 +74,75 @@ int webc_setenv (const char *name, const char *value)
    return 0;
 }
 
+int webc_sl_handler_auth (int                       fd,
+                          char                     *remote_addr,
+                          uint16_t                  remote_port,
+                          enum webc_method_t        method,
+                          enum webc_http_version_t  version,
+                          const char               *resource,
+                          char                    **rqst_headers,
+                          webc_header_t            *rsp_headers,
+                          char                     *vars)
+{
+   WEBC_UTIL_LOG ("auth call from %s:%u,method:%i,version:%i,resource:%s\n",
+                     remote_addr, remote_port,
+                     method, version, resource);
+   static char buf[1024];
+   ssize_t nbytes = 0;
+   int flags = fcntl (fd, F_GETFL, 0);
+   fcntl (fd, F_SETFL, flags | O_NONBLOCK);
+   while ((nbytes = read (fd, buf, sizeof buf))>0) {
+      printf ("%zu\n", nbytes);
+      fwrite (buf, 1, nbytes, stdout);
+   }
+   fflush (stdout);
+   return 501;
+}
+
+int webc_sl_handler_call_sp (int                       fd,
+                             char                     *remote_addr,
+                             uint16_t                  remote_port,
+                             enum webc_method_t        method,
+                             enum webc_http_version_t  version,
+                             const char               *resource,
+                             char                    **rqst_headers,
+                             webc_header_t            *rsp_headers,
+                             char                     *vars)
+{
+   WEBC_UTIL_LOG ("sp call from %s:%u,method:%i,version:%i,resource:%s\n",
+                     remote_addr, remote_port,
+                     method, version, resource);
+   return 501;
+}
+
+int webc_sl_handler_call_native (int                       fd,
+                                 char                     *remote_addr,
+                                 uint16_t                  remote_port,
+                                 enum webc_method_t        method,
+                                 enum webc_http_version_t  version,
+                                 const char               *resource,
+                                 char                    **rqst_headers,
+                                 webc_header_t            *rsp_headers,
+                                 char                     *vars)
+{
+   WEBC_UTIL_LOG ("native call from %s:%u,method:%i,version:%i,resource:%s\n",
+                     remote_addr, remote_port,
+                     method, version, resource);
+   return 501;
+}
+
+int webc_sl_handler_call_fileAPI (int                       fd,
+                                  char                     *remote_addr,
+                                  uint16_t                  remote_port,
+                                  enum webc_method_t        method,
+                                  enum webc_http_version_t  version,
+                                  const char               *resource,
+                                  char                    **rqst_headers,
+                                  webc_header_t            *rsp_headers,
+                                  char                     *vars)
+{
+   WEBC_UTIL_LOG ("fileAPI call from %s:%u,method:%i,version:%i,resource:%s\n",
+                     remote_addr, remote_port,
+                     method, version, resource);
+   return 501;
+}

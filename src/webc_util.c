@@ -510,11 +510,11 @@ static void *thread_func (void *ta)
                         *awww_form = "application/x-www-form-urlencoded";
 
       if ((strnicmp (content_type, mform_data, strlen (mform_data)))==0) {
-
+         // TODO: read the multipart form data
       }
 
       if ((strnicmp (content_type, awww_form, strlen (awww_form)))==0) {
-
+         // TODO: read the POSTed form data
       }
    }
    status = webc_resource_handler (args->fd, args->remote_addr, args->remote_port,
