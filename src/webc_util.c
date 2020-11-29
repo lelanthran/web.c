@@ -412,7 +412,7 @@ static void *thread_func (void *ta)
    char *getvars = NULL;
    const char *content_type = NULL;
    enum http_version_t version = 0;
-   resource_handler_t *resource_handler = NULL;
+   webc_resource_handler_t *webc_resource_handler = NULL;
 
    char *rqst_line = NULL;
    size_t rqst_line_len = 0;
@@ -477,9 +477,9 @@ static void *thread_func (void *ta)
    org_resource = get_rqst_resource (rqst_line);
    version = get_rqst_version (rqst_line);
    getvars = get_rqst_getvars (rqst_line);
-   resource_handler = resource_handler_find (org_resource);
+   webc_resource_handler = webc_resource_handler_find (org_resource);
 
-   if (!method || !org_resource || !version || !resource_handler) {
+   if (!method || !org_resource || !version || !webc_resource_handler) {
       THRD_LOG (args->remote_addr, args->remote_port,
                 "Unrecognised method, version or resource [%s]\n",
                  rqst_line);
@@ -517,10 +517,10 @@ static void *thread_func (void *ta)
 
       }
    }
-   status = resource_handler (args->fd, args->remote_addr, args->remote_port,
-                              method, version, resource,
-                              rqst_headers, rsp_headers,
-                              getvars);
+   status = webc_resource_handler (args->fd, args->remote_addr, args->remote_port,
+                                   method, version, resource,
+                                   rqst_headers, rsp_headers,
+                                   getvars);
 
    TS_LOG ("[%s:%u] =>[%i]\n", args->remote_addr, args->remote_port, status);
 

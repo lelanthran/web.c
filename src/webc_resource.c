@@ -10,10 +10,10 @@
 /* *************************************************************** */
 
 struct res_rec_t {
-   char                 *name;
-   char                 *pattern;
-   enum pattern_type_t   type;
-   resource_handler_t   *handler;
+   char                       *name;
+   char                       *pattern;
+   enum webc_pattern_type_t    type;
+   webc_resource_handler_t    *handler;
 };
 
 static void res_rec_del (struct res_rec_t *rec)
@@ -25,10 +25,10 @@ static void res_rec_del (struct res_rec_t *rec)
    }
 }
 
-static struct res_rec_t *res_rec_new (const char *name,
-                                      const char *pattern,
-                                      enum pattern_type_t type,
-                                      resource_handler_t *handler)
+static struct res_rec_t *res_rec_new (const char               *name,
+                                      const char               *pattern,
+                                      enum webc_pattern_type_t  type,
+                                      webc_resource_handler_t  *handler)
 {
    struct res_rec_t *ret = calloc (1, sizeof *ret);
    if (!ret)
@@ -55,9 +55,9 @@ static size_t g_resources_len = 0;
 static pthread_mutex_t g_resources_lock;
 static bool lock_initialised = false;
 
-static void resource_global_handler_free (void)
+static void webc_resource_global_handler_free (void)
 {
-   resource_global_handler_unlock ();
+   webc_resource_global_handler_unlock ();
    pthread_mutex_destroy (&g_resources_lock);
    for (size_t i=0; g_resources[i]; i++) {
       res_rec_del (g_resources[i]);
@@ -65,7 +65,7 @@ static void resource_global_handler_free (void)
    free (g_resources);
 }
 
-bool resource_global_handler_lock (void)
+bool webc_resource_global_handler_lock (void)
 {
    if (!lock_initialised) {
       pthread_mutexattr_t attr;
@@ -73,23 +73,23 @@ bool resource_global_handler_lock (void)
       pthread_mutexattr_settype (&attr, PTHREAD_MUTEX_RECURSIVE);
       pthread_mutex_init (&g_resources_lock, &attr);
       pthread_mutexattr_destroy (&attr);
-      atexit (resource_global_handler_free);
+      atexit (webc_resource_global_handler_free);
       lock_initialised = true;
    }
    return pthread_mutex_lock (&g_resources_lock) == 0 ? true : false;
 }
 
-bool resource_global_handler_unlock (void)
+bool webc_resource_global_handler_unlock (void)
 {
    return pthread_mutex_unlock (&g_resources_lock) == 0 ? true : false;
 }
 
 /* *************************************************************** */
 
-bool resource_global_handler_add (const char *name,
-                                  const char *pattern,
-                                  enum pattern_type_t type,
-                                  resource_handler_t *handler)
+bool webc_resource_global_handler_add (const char                *name,
+                                       const char                *pattern,
+                                       enum webc_pattern_type_t   type,
+                                       webc_resource_handler_t   *handler)
 {
    struct res_rec_t *rec = res_rec_new (name, pattern, type, handler);
    if (!rec)
@@ -116,7 +116,7 @@ bool resource_global_handler_add (const char *name,
 }
 
 
-resource_handler_t *resource_handler_find (const char *resource)
+webc_resource_handler_t *webc_resource_handler_find (const char *resource)
 {
    if (!resource)
       return webc_handler_static_file;

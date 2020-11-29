@@ -168,33 +168,33 @@ int main (int argc, char **argv)
       goto errorexit;
    }
 
-   if (!(resource_global_handler_lock())) {
+   if (!(webc_resource_global_handler_lock())) {
       UTIL_LOG ("Failed to aquire global resource handler lock\n");
       goto errorexit;
    }
 
-   if (!(resource_global_handler_add ("handler_none",
+   if (!(webc_resource_global_handler_add ("handler_none",
                                       EXTENSION_NONE, pattern_SUFFIX,
                                       webc_handler_none))) {
       UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_NONE);
       goto errorexit;
    }
 
-   if (!(resource_global_handler_add ("handler_none",
+   if (!(webc_resource_global_handler_add ("handler_none",
                                       EXTENSION_DIR, pattern_SUFFIX,
                                       webc_handler_dir))) {
       UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_DIR);
       goto errorexit;
    }
 
-   if (!(resource_global_handler_add ("handler_none",
+   if (!(webc_resource_global_handler_add ("handler_none",
                                       EXTENSION_TEXT, pattern_SUFFIX,
                                       webc_handler_static_file))) {
       UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_TEXT);
       goto errorexit;
    }
 
-   if (!(resource_global_handler_add ("handler_none",
+   if (!(webc_resource_global_handler_add ("handler_none",
                                       EXTENSION_HTML, pattern_SUFFIX,
                                       webc_handler_html))) {
       UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_HTML);
@@ -206,7 +206,7 @@ int main (int argc, char **argv)
       goto errorexit;
    }
 
-   if (!(resource_global_handler_unlock())) {
+   if (!(webc_resource_global_handler_unlock())) {
       UTIL_LOG ("Failed to release global resource handler lock\n");
       goto errorexit;
    }
