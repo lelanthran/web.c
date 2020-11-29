@@ -78,15 +78,15 @@ errorexit:
    return ret;
 }
 
-int handler_static_file (int                    fd,
-                         char                  *remote_addr,
-                         uint16_t               remote_port,
-                         enum method_t          method,
-                         enum http_version_t    version,
-                         const char            *resource,
-                         char                 **rqst_headers,
-                         header_t              *rsp_headers,
-                         char                  *vars)
+int webc_handler_static_file (int                    fd,
+                              char                  *remote_addr,
+                              uint16_t               remote_port,
+                              enum method_t          method,
+                              enum http_version_t    version,
+                              const char            *resource,
+                              char                 **rqst_headers,
+                              header_t              *rsp_headers,
+                              char                  *vars)
 {
    (void) vars;
 
@@ -118,15 +118,15 @@ int handler_static_file (int                    fd,
    return local_sendfile (fd, resource, 0, st_size);
 }
 
-int handler_html (int                    fd,
-                  char                  *remote_addr,
-                  uint16_t               remote_port,
-                  enum method_t          method,
-                  enum http_version_t    version,
-                  const char            *resource,
-                  char                 **rqst_headers,
-                  header_t              *rsp_headers,
-                  char                  *vars)
+int webc_handler_html (int                    fd,
+                       char                  *remote_addr,
+                       uint16_t               remote_port,
+                       enum method_t          method,
+                       enum http_version_t    version,
+                       const char            *resource,
+                       char                 **rqst_headers,
+                       header_t              *rsp_headers,
+                       char                  *vars)
 {
    (void) method;
    (void) version;
@@ -156,15 +156,15 @@ int handler_html (int                    fd,
    return local_sendfile (fd, resource, 0, st_size);
 }
 
-int handler_none (int                    fd,
-                  char                  *remote_addr,
-                  uint16_t               remote_port,
-                  enum method_t          method,
-                  enum http_version_t    version,
-                  const char            *resource,
-                  char                 **rqst_headers,
-                  header_t              *rsp_headers,
-                  char                  *vars)
+int webc_handler_none (int                    fd,
+                       char                  *remote_addr,
+                       uint16_t               remote_port,
+                       enum method_t          method,
+                       enum http_version_t    version,
+                       const char            *resource,
+                       char                 **rqst_headers,
+                       header_t              *rsp_headers,
+                       char                  *vars)
 {
    struct stat sb;
    int (*statfunc) (const char *pathname, struct stat *statbuf);
@@ -177,32 +177,32 @@ int handler_none (int                    fd,
    }
 
    if (S_ISREG (sb.st_mode)) {
-      return handler_static_file (fd, remote_addr, remote_port, method,
-                                  version, resource,
-                                  rqst_headers, rsp_headers,
-                                  vars);
+      return webc_handler_static_file (fd, remote_addr, remote_port, method,
+                                       version, resource,
+                                       rqst_headers, rsp_headers,
+                                       vars);
    }
 
    if (S_ISDIR (sb.st_mode)) {
-      return handler_dir (fd, remote_addr, remote_port, method,
-                          version, resource,
-                          rqst_headers,
-                          rsp_headers,
-                          vars);
+      return webc_handler_dir (fd, remote_addr, remote_port, method,
+                               version, resource,
+                               rqst_headers,
+                               rsp_headers,
+                               vars);
    }
 
    return 500;
 }
 
-int handler_dir (int                    fd,
-                 char                  *remote_addr,
-                 uint16_t               remote_port,
-                 enum method_t          method,
-                 enum http_version_t    version,
-                 const char            *resource,
-                 char                 **rqst_headers,
-                 header_t              *rsp_headers,
-                 char                  *vars)
+int webc_handler_dir (int                    fd,
+                      char                  *remote_addr,
+                      uint16_t               remote_port,
+                      enum method_t          method,
+                      enum http_version_t    version,
+                      const char            *resource,
+                      char                 **rqst_headers,
+                      header_t              *rsp_headers,
+                      char                  *vars)
 {
 
    struct stat sb;
@@ -236,20 +236,20 @@ int handler_dir (int                    fd,
    THRD_LOG (remote_addr, remote_port, "Trying [%s]\n", index_html);
 
    if ((stat (index_html, &sb))!=0) {
-      int ret = handler_dirlist (fd, remote_addr, remote_port, method, version,
-                                 resource,
-                                 rqst_headers,
-                                 rsp_headers,
-                                 vars);
+      int ret = webc_handler_dirlist (fd, remote_addr, remote_port, method, version,
+                                      resource,
+                                      rqst_headers,
+                                      rsp_headers,
+                                      vars);
       free (index_html);
       return ret;
    }
 
-   int ret =  handler_html (fd, remote_addr, remote_port, method, version,
-                            index_html,
-                            rqst_headers,
-                            rsp_headers,
-                            vars);
+   int ret =  webc_handler_html (fd, remote_addr, remote_port, method, version,
+                                 index_html,
+                                 rqst_headers,
+                                 rsp_headers,
+                                 vars);
 
    free (index_html);
 
@@ -323,15 +323,15 @@ static int cb_strsort (const void *lhs, const void *rhs)
    return strcmp (*slhs, *srhs);
 }
 
-int handler_dirlist (int                    fd,
-                     char                  *remote_addr,
-                     uint16_t               remote_port,
-                     enum method_t          method,
-                     enum http_version_t    version,
-                     const char            *resource,
-                     char                 **rqst_headers,
-                     header_t              *rsp_headers,
-                     char                  *vars)
+int webc_handler_dirlist (int                    fd,
+                          char                  *remote_addr,
+                          uint16_t               remote_port,
+                          enum method_t          method,
+                          enum http_version_t    version,
+                          const char            *resource,
+                          char                 **rqst_headers,
+                          header_t              *rsp_headers,
+                          char                  *vars)
 {
    (void) method;
    (void) version;

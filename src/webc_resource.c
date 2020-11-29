@@ -119,7 +119,7 @@ bool resource_global_handler_add (const char *name,
 resource_handler_t *resource_handler_find (const char *resource)
 {
    if (!resource)
-      return handler_static_file;
+      return webc_handler_static_file;
 
    size_t res_len = strlen (resource);
 
@@ -167,6 +167,6 @@ resource_handler_t *resource_handler_find (const char *resource)
    }
 
    UTIL_LOG ("No match for [%s], using handler_static_file()\n", resource);
-   return handler_static_file;
+   return webc_handler_static_file;
 }
 

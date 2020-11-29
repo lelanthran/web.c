@@ -175,28 +175,28 @@ int main (int argc, char **argv)
 
    if (!(resource_global_handler_add ("handler_none",
                                       EXTENSION_NONE, pattern_SUFFIX,
-                                      handler_none))) {
+                                      webc_handler_none))) {
       UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_NONE);
       goto errorexit;
    }
 
    if (!(resource_global_handler_add ("handler_none",
                                       EXTENSION_DIR, pattern_SUFFIX,
-                                      handler_dir))) {
+                                      webc_handler_dir))) {
       UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_DIR);
       goto errorexit;
    }
 
    if (!(resource_global_handler_add ("handler_none",
                                       EXTENSION_TEXT, pattern_SUFFIX,
-                                      handler_static_file))) {
+                                      webc_handler_static_file))) {
       UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_TEXT);
       goto errorexit;
    }
 
    if (!(resource_global_handler_add ("handler_none",
                                       EXTENSION_HTML, pattern_SUFFIX,
-                                      handler_html))) {
+                                      webc_handler_html))) {
       UTIL_LOG ("Failed to add handler [%s]\n", EXTENSION_HTML);
       goto errorexit;
    }
