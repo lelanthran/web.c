@@ -85,7 +85,7 @@ int webc_handler_static_file (int                    fd,
                               enum http_version_t    version,
                               const char            *resource,
                               char                 **rqst_headers,
-                              header_t              *rsp_headers,
+                              webc_header_t         *rsp_headers,
                               char                  *vars)
 {
    (void) vars;
@@ -105,13 +105,13 @@ int webc_handler_static_file (int                    fd,
       return statcode;
    }
 
-   header_set (rsp_headers, header_CONTENT_TYPE, "application/octet-stream");
-   header_set (rsp_headers, header_CONTENT_LENGTH, slen);
-   header_set (rsp_headers, header_CONTENT_DISPOSITION, "attachment;");
+   webc_header_set (rsp_headers, webc_header_CONTENT_TYPE, "application/octet-stream");
+   webc_header_set (rsp_headers, webc_header_CONTENT_LENGTH, slen);
+   webc_header_set (rsp_headers, webc_header_CONTENT_DISPOSITION, "attachment;");
 
    write (fd, get_http_rspstr (200), strlen (get_http_rspstr (200)));
 
-   header_write (rsp_headers, fd);
+   webc_header_write (rsp_headers, fd);
 
    UTIL_LOG ("Sending static file\n");
 
@@ -125,7 +125,7 @@ int webc_handler_html (int                    fd,
                        enum http_version_t    version,
                        const char            *resource,
                        char                 **rqst_headers,
-                       header_t              *rsp_headers,
+                       webc_header_t         *rsp_headers,
                        char                  *vars)
 {
    (void) method;
@@ -146,12 +146,12 @@ int webc_handler_html (int                    fd,
       return statcode;
    }
 
-   header_set (rsp_headers, header_CONTENT_TYPE, "text/html");
-   header_set (rsp_headers, header_CONTENT_LENGTH, slen);
+   webc_header_set (rsp_headers, webc_header_CONTENT_TYPE, "text/html");
+   webc_header_set (rsp_headers, webc_header_CONTENT_LENGTH, slen);
 
    const char *rsp = get_http_rspstr (200);
    write (fd, rsp, strlen (rsp));
-   header_write (rsp_headers, fd);
+   webc_header_write (rsp_headers, fd);
 
    return local_sendfile (fd, resource, 0, st_size);
 }
@@ -163,7 +163,7 @@ int webc_handler_none (int                    fd,
                        enum http_version_t    version,
                        const char            *resource,
                        char                 **rqst_headers,
-                       header_t              *rsp_headers,
+                       webc_header_t         *rsp_headers,
                        char                  *vars)
 {
    struct stat sb;
@@ -201,7 +201,7 @@ int webc_handler_dir (int                    fd,
                       enum http_version_t    version,
                       const char            *resource,
                       char                 **rqst_headers,
-                      header_t              *rsp_headers,
+                      webc_header_t         *rsp_headers,
                       char                  *vars)
 {
 
@@ -330,7 +330,7 @@ int webc_handler_dirlist (int                    fd,
                           enum http_version_t    version,
                           const char            *resource,
                           char                 **rqst_headers,
-                          header_t              *rsp_headers,
+                          webc_header_t         *rsp_headers,
                           char                  *vars)
 {
    (void) method;

@@ -420,14 +420,14 @@ static void *thread_func (void *ta)
    char *rqst_headers[MAX_HTTP_HEADERS];
    size_t rqst_header_lens[MAX_HTTP_HEADERS];
 
-   header_t *rsp_headers = NULL;
+   webc_header_t *rsp_headers = NULL;
 
    size_t i;
 
    memset (rqst_headers, 0, MAX_HTTP_HEADERS * sizeof rqst_headers[0]);
    memset (rqst_header_lens, 0, MAX_HTTP_HEADERS * sizeof rqst_header_lens[0]);
 
-   if (!(rsp_headers = header_new ())) {
+   if (!(rsp_headers = webc_header_new ())) {
       THRD_LOG (args->remote_addr, args->remote_port,
                   "Failed to create header object\n");
       goto errorexit;
@@ -503,7 +503,7 @@ static void *thread_func (void *ta)
     * respectively).
     */
    content_type = headerlist_find (rqst_headers,
-                                               header_CONTENT_TYPE);
+                                               webc_header_CONTENT_TYPE);
    if (content_type && method == method_POST) {
       // Must see if other methods can send forms
       static const char *mform_data = "multipart/form-data",
@@ -543,7 +543,7 @@ errorexit:
    for (i=0; i<MAX_HTTP_HEADERS; i++) {
       free (rqst_headers[i]);
    }
-   header_del (rsp_headers);
+   webc_header_del (rsp_headers);
 
    shutdown (args->fd, SHUT_RDWR);
    close (args->fd);

@@ -17,7 +17,7 @@ static int app_handler (int                    fd,
                         enum http_version_t    version,
                         const char            *resource,
                         char                 **rqst_headers,
-                        header_t              *rsp_headers,
+                        webc_header_t         *rsp_headers,
                         char                  *vars)
 {
    (void)remote_addr;
@@ -26,9 +26,9 @@ static int app_handler (int                    fd,
    (void)version;
    (void)rqst_headers;
 
-   header_set (rsp_headers, header_CONTENT_TYPE, "text/html");
+   webc_header_set (rsp_headers, webc_header_CONTENT_TYPE, "text/html");
    write (fd, get_http_rspstr (200), strlen (get_http_rspstr (200)));
-   header_write (rsp_headers, fd);
+   webc_header_write (rsp_headers, fd);
 
    dprintf (fd, "<html>\n\t<body>\n\t\t<pre>%s\n%s</pre>\n\t</body>\n</html>\n",
                 resource, vars);

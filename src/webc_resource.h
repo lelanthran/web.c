@@ -21,7 +21,7 @@ typedef int (resource_handler_t) (int                    fd,
                                   enum http_version_t    version,
                                   const char            *resource,
                                   char                 **rqst_headers,
-                                  header_t              *rsp_headers,
+                                  webc_header_t         *rsp_headers,
                                   char                  *vars);
 
 #ifdef __cplusplus
