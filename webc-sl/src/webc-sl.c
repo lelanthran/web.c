@@ -58,37 +58,10 @@ static void print_help_msg (const char *option)
 #define WEBC_WEB_ROOT         ("web-root")
 #define WEBC_LOGFILE          ("logfile")
 
-static const char *webc_getenv (const char *name)
-{
-   char *fullname = ds_str_cat ("webc_", name);
-   if (!fullname) {
-      UTIL_LOG ("OOM error\n");
-      return NULL;
-   }
-
-   char *ret = getenv (fullname);
-   free (fullname);
-   return ret;
-}
-
-static int webc_setenv (const char *name, const char *value)
-{
-   char *fullname = ds_str_cat ("webc_", name);
-   if (!fullname) {
-      UTIL_LOG ("OOM error\n");
-      return -1;
-   }
-
-   if ((setenv (fullname, value, 1))!=0) {
-      UTIL_LOG ("Failed to set environment variable [%s]: %m\n", fullname);
-      return -2;
-   }
-   free (fullname);
-   return 0;
-}
-
 static void signal_handler (int n);
 static int load_all_cline_opts (int argc, char **argv);
+static const char *webc_getenv (const char *name);
+static int webc_setenv (const char *name, const char *value);
 
 int main (int argc, char **argv)
 {
@@ -377,5 +350,34 @@ static int load_all_cline_opts (int argc, char **argv)
       argv[i][0] = 0;
    }
    return retval;
+}
+
+static const char *webc_getenv (const char *name)
+{
+   char *fullname = ds_str_cat ("webc_", name);
+   if (!fullname) {
+      UTIL_LOG ("OOM error\n");
+      return NULL;
+   }
+
+   char *ret = getenv (fullname);
+   free (fullname);
+   return ret;
+}
+
+static int webc_setenv (const char *name, const char *value)
+{
+   char *fullname = ds_str_cat ("webc_", name);
+   if (!fullname) {
+      UTIL_LOG ("OOM error\n");
+      return -1;
+   }
+
+   if ((setenv (fullname, value, 1))!=0) {
+      UTIL_LOG ("Failed to set environment variable [%s]: %m\n", fullname);
+      return -2;
+   }
+   free (fullname);
+   return 0;
 }
 
