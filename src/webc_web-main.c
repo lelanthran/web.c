@@ -163,7 +163,7 @@ int main (int argc, char **argv)
 
    /* ************************************************************** */
 
-   if (!(web_add_init ())) {
+   if (!(webc_web_add_init ())) {
       WEBC_UTIL_LOG ("Failed to run the user-supplied initialisation\n");
       goto errorexit;
    }
@@ -201,7 +201,7 @@ int main (int argc, char **argv)
       goto errorexit;
    }
 
-   if (!(web_add_load_handlers ())) {
+   if (!(webc_web_add_load_handlers ())) {
       WEBC_UTIL_LOG ("Failed to run the user-supplied load-handlers\n");
       goto errorexit;
    }

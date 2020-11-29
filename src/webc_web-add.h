@@ -8,8 +8,8 @@
 extern "C" {
 #endif
 
-   bool web_add_init (void);
-   bool web_add_load_handlers (void);
+   bool webc_web_add_init (void);
+   bool webc_web_add_load_handlers (void);
 
 #ifdef __cplusplus
 };

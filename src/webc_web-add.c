@@ -36,7 +36,7 @@ static int app_handler (int                      fd,
    return 200;
 }
 
-bool web_add_init (void)
+bool webc_web_add_init (void)
 {
    /* All the initialisation you want to do on startup must go here. On
     * success return true. On failure return false.
@@ -45,7 +45,7 @@ bool web_add_init (void)
    return true;
 }
 
-bool web_add_load_handlers (void)
+bool webc_web_add_load_handlers (void)
 {
    /* All the handlers you want to load must go here. On success return
     * true. On failure return false.
