@@ -5,8 +5,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "util.h"
-#include "header.h"
+#include "webc_util.h"
+#include "webc_header.h"
 
 enum pattern_type_t {
    pattern_SUFFIX,

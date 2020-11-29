@@ -4,8 +4,8 @@
 
 #include <pthread.h>
 
-#include "resource.h"
-#include "handler.h"
+#include "webc_resource.h"
+#include "webc_handler.h"
 
 /* *************************************************************** */
 

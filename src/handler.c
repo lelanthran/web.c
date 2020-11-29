@@ -14,9 +14,9 @@
 
 #include <sys/sendfile.h>
 
-#include "handler.h"
-#include "header.h"
-#include "config.h"
+#include "webc_handler.h"
+#include "webc_header.h"
+#include "webc_config.h"
 
 static int get_filesize (const char *fname, char *dst_sizestr,
                                             uint64_t *dst_size64)

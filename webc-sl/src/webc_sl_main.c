@@ -22,11 +22,13 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include "web-add.h"
-#include "util.h"
-#include "config.h"
-#include "resource.h"
-#include "handler.h"
+#include "webc_web-add.h"
+#include "webc_util.h"
+#include "webc_config.h"
+#include "webc_resource.h"
+#include "webc_handler.h"
+
+#include "webc_sl.h"
 
 #include "ds_str.h"
 

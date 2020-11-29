@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "resource.h"
+#include "webc_resource.h"
 
 #define HANDLER(x)   int x (int                    fd,            \
                             char                  *remote_addr,   \

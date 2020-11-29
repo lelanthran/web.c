@@ -5,8 +5,8 @@
 
 #include <unistd.h>
 
-#include "header.h"
-#include "util.h"
+#include "webc_header.h"
+#include "webc_util.h"
 
 struct header_t {
    char **fields;

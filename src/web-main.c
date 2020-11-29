@@ -14,12 +14,12 @@
 #include <fcntl.h>
 
 
-#include "web-main.h"
-#include "web-add.h"
-#include "util.h"
-#include "config.h"
-#include "resource.h"
-#include "handler.h"
+#include "webc_web-main.h"
+#include "webc_web-add.h"
+#include "webc_util.h"
+#include "webc_config.h"
+#include "webc_resource.h"
+#include "webc_handler.h"
 
 static volatile sig_atomic_t g_exit_program = 0;
 static size_t g_timeout = TIMEOUT_TO_SHUTDOWN;

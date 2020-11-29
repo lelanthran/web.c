@@ -17,10 +17,10 @@
 
 #include <pthread.h>
 
-#include "resource.h"
-#include "util.h"
-#include "config.h"
-#include "header.h"
+#include "webc_resource.h"
+#include "webc_util.h"
+#include "webc_config.h"
+#include "webc_header.h"
 
 static enum method_t get_rqst_method (const char *rqst_line)
 {

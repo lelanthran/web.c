@@ -5,11 +5,10 @@
 
 #include <unistd.h>
 
-#include "util.h"
-#include "resource.h"
-#include "handler.h"
-
-#include "web-add.h"
+#include "webc_util.h"
+#include "webc_resource.h"
+#include "webc_handler.h"
+#include "webc_web-add.h"
 
 static int app_handler (int                    fd,
                         char                  *remote_addr,

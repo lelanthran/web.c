@@ -5,7 +5,7 @@
 
 #include "webc_sl.h"
 
-#include "util.h"
+#include "webc_util.h"
 
 #include "ds_str.h"
 
