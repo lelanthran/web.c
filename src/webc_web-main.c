@@ -27,6 +27,24 @@ static size_t g_timeout = TIMEOUT_TO_SHUTDOWN;
 static void signal_handler (int n);
 static const char *read_cline_opt (int argc, char **argv, const char *name);
 
+static void print_help_message (void)
+{
+   static const char *msg[] = {
+"Options:",
+"  --help                  Display this message and exit successfully",
+"  --port=<number>         The port number to listen on (all interfaces)",
+"  --backlog=<number>      The number of requests to queue when busy.",
+"  --logfile=<template>    A string specifying the logfile. This string will be suffixed with the",
+"                          timestamp when the file is created at startup.",
+"",
+"Unrecognised options will prevent this program from starting."
+
+   };
+   for (size_t i=0; i<sizeof msg/sizeof msg[0]; i++) {
+      printf ("%s\n", msg[i]);
+   }
+}
+
 int main (int argc, char **argv)
 {
    int ret = EXIT_FAILURE;
@@ -45,6 +63,7 @@ int main (int argc, char **argv)
    /* *************************************************************
     *  Handle the command line arguments
     */
+   const char *opt_help    = read_cline_opt (argc, argv, "help");
    const char *opt_portnum = read_cline_opt (argc, argv, "port");
    const char *opt_logfile = read_cline_opt (argc, argv, "logfile");
    const char *opt_backlog = read_cline_opt (argc, argv, "backlog");
@@ -57,8 +76,15 @@ int main (int argc, char **argv)
       }
    }
    if (opt_unknown) {
+      WEBC_UTIL_LOG ("Unknown options specified\n");
+      print_help_message ();
       WEBC_UTIL_LOG ("Aborting\n");
       return EXIT_FAILURE;
+   }
+
+   if (opt_help) {
+      print_help_message ();
+      return EXIT_SUCCESS;
    }
 
    if (!opt_portnum) {
