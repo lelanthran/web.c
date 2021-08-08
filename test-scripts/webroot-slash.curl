@@ -8,6 +8,7 @@
 <tr><td><a href='//lib/'>lib/</a></td></tr>
 <tr><td><a href='//lib32/'>lib32/</a></td></tr>
 <tr><td><a href='//lib64/'>lib64/</a></td></tr>
+<tr><td><a href='//libx32/'>libx32/</a></td></tr>
 <tr><td><a href='//lost+found/'>lost+found/</a></td></tr>
 <tr><td><a href='//media/'>media/</a></td></tr>
 <tr><td><a href='//mnt/'>mnt/</a></td></tr>
@@ -21,4 +22,4 @@
 <tr><td><a href='//tmp/'>tmp/</a></td></tr>
 <tr><td><a href='//usr/'>usr/</a></td></tr>
 <tr><td><a href='//var/'>var/</a></td></tr>
-  </table>  <hr>  <p><em>Powered by Web.c/1.0.0</em>  </body></html>
+  </table>  <hr>  <p><em>Powered by Web.c/1.0.3</em>  </body></html>

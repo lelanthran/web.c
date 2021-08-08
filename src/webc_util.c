@@ -96,6 +96,12 @@ static char *get_rqst_resource (const char *rqst_line)
 
    strncpy (ret, start, len);
    ret[len] = 0;
+
+   char *dblslash;
+   while ((dblslash = strstr (ret, "//"))) {
+      memmove (dblslash, &dblslash[1], (strlen (&dblslash[1]) + 1));
+   }
+
    return ret;
 }
 
@@ -478,6 +484,13 @@ static void *thread_func (void *ta)
    version = get_rqst_version (rqst_line);
    getvars = get_rqst_getvars (rqst_line);
    webc_resource_handler = webc_resource_handler_find (org_resource);
+
+   WEBC_THRD_LOG (args->remote_addr, args->remote_port,
+                  "method        [%i]\n"
+                  "org_resource  [%s]\n"
+                  "version       [%i]\n"
+                  "getvars       [%s]\n",
+                     method, org_resource, version, getvars);
 
    if (!method || !org_resource || !version || !webc_resource_handler) {
       WEBC_THRD_LOG (args->remote_addr, args->remote_port,
