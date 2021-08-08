@@ -48,7 +48,7 @@
 
 // The application identifier, and the version string
 #define APPLICATION_ID           "Web.c"
-#define VERSION_STRING           "1.0.0"
+#define VERSION_STRING           webc_version
 
 
 #endif
