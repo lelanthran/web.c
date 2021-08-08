@@ -6,6 +6,7 @@
 #include <signal.h>
 #include <inttypes.h>
 #include <time.h>
+#include <dlfcn.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -26,6 +27,7 @@ static size_t g_timeout = TIMEOUT_TO_SHUTDOWN;
 
 static void signal_handler (int n);
 static const char *read_cline_opt (int argc, char **argv, const char *name);
+static bool load_plugins (const char *list);
 
 static void print_help_message (void)
 {
@@ -36,6 +38,7 @@ static void print_help_message (void)
 "  --backlog=<number>      The number of requests to queue when busy.",
 "  --logfile=<template>    A string specifying the logfile. This string will be suffixed with the",
 "                          timestamp when the file is created at startup.",
+"  --plugins=<libfiles>    A comma-separated list of plugin libararies to load.",
 "",
 "Unrecognised options will prevent this program from starting."
 
@@ -67,6 +70,7 @@ int main (int argc, char **argv)
    const char *opt_portnum = read_cline_opt (argc, argv, "port");
    const char *opt_logfile = read_cline_opt (argc, argv, "logfile");
    const char *opt_backlog = read_cline_opt (argc, argv, "backlog");
+   const char *opt_plugins = read_cline_opt (argc, argv, "plugins");
 
    bool opt_unknown = false;
    for (size_t i=1; argv[i]; i++) {
@@ -232,6 +236,11 @@ int main (int argc, char **argv)
       goto errorexit;
    }
 
+   if (!(load_plugins (opt_plugins))) {
+      WEBC_UTIL_LOG ("One or more plugins failed to load, aborting\n");
+      goto errorexit;
+   }
+
    if (!(webc_resource_global_handler_unlock())) {
       WEBC_UTIL_LOG ("Failed to release global resource handler lock\n");
       goto errorexit;
@@ -325,3 +334,62 @@ static const char *read_cline_opt (int argc, char **argv, const char *name)
    }
    return NULL;
 }
+
+static bool load_plugin (const char *plugin)
+{
+   bool error = true;
+
+   void *libh = dlopen (plugin, RTLD_NOW | RTLD_GLOBAL | RTLD_DEEPBIND);
+   if (!libh) {
+      WEBC_UTIL_LOG ("Failed to open [%s]: %s\n", plugin, dlerror ());
+      goto errorexit;
+   }
+
+   bool (*fptr_init) (void) = dlsym (libh, "webc_init");
+   if (!fptr_init) {
+      WEBC_UTIL_LOG ("Failed to resolve symbol 'webc_init' in [%s]\n", plugin);
+      goto errorexit;
+   }
+
+   if (!fptr_init ()) {
+      WEBC_UTIL_LOG ("Failed to initialise plugin [%s]\n", plugin);
+      goto errorexit;
+   }
+
+   error = false;
+
+errorexit:
+   if (libh) {
+      dlclose (libh);
+   }
+   return !error;
+}
+
+
+static bool load_plugins (const char *list)
+{
+   bool error = false;
+
+   char *tmp = malloc (strlen (list) + 1);
+   if (!tmp) {
+      WEBC_UTIL_LOG ("OOM error\n");
+      return false;
+   }
+   strcpy (tmp, list);
+   char *plugin = strtok (tmp, ",");
+
+   while (plugin) {
+      if (!(load_plugin (plugin))) {
+         WEBC_UTIL_LOG ("Failed to load plugin [%s]\n", plugin);
+         error = true;
+      }
+      plugin = strtok (NULL, ",");
+   }
+
+   free (tmp);
+   return !error;
+}
+
+
+
+
