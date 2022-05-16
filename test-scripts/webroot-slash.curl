@@ -1,25 +1,9 @@
-<html>  <body> <p style='font-size:large'>Directory index for <b><em>/</b></em></p>  <hr>  <table><tr><td><a href='//../'>../</a></td></tr>
-<tr><td><a href='//bin/'>bin/</a></td></tr>
-<tr><td><a href='//boot/'>boot/</a></td></tr>
-<tr><td><a href='//cdrom/'>cdrom/</a></td></tr>
-<tr><td><a href='//dev/'>dev/</a></td></tr>
-<tr><td><a href='//etc/'>etc/</a></td></tr>
-<tr><td><a href='//home/'>home/</a></td></tr>
-<tr><td><a href='//lib/'>lib/</a></td></tr>
-<tr><td><a href='//lib32/'>lib32/</a></td></tr>
-<tr><td><a href='//lib64/'>lib64/</a></td></tr>
-<tr><td><a href='//libx32/'>libx32/</a></td></tr>
-<tr><td><a href='//lost+found/'>lost+found/</a></td></tr>
-<tr><td><a href='//media/'>media/</a></td></tr>
-<tr><td><a href='//mnt/'>mnt/</a></td></tr>
-<tr><td><a href='//opt/'>opt/</a></td></tr>
-<tr><td><a href='//proc/'>proc/</a></td></tr>
-<tr><td><a href='//root/'>root/</a></td></tr>
-<tr><td><a href='//run/'>run/</a></td></tr>
-<tr><td><a href='//sbin/'>sbin/</a></td></tr>
-<tr><td><a href='//srv/'>srv/</a></td></tr>
-<tr><td><a href='//sys/'>sys/</a></td></tr>
-<tr><td><a href='//tmp/'>tmp/</a></td></tr>
-<tr><td><a href='//usr/'>usr/</a></td></tr>
-<tr><td><a href='//var/'>var/</a></td></tr>
-  </table>  <hr>  <p><em>Powered by Web.c/1.0.3</em>  </body></html>
+<html>
+   <body>
+      <h1>Web.c</h1>
+      <p>Your webserver is up and running. All URL paths are relative to this
+         this directory. See the documentation for more information on
+         configuring this webserver.
+      </p>
+   </body>
+</html>
